@@ -1,0 +1,24 @@
+{
+  "name": "pactum-offchain",
+  "version": "2.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Pactum off-chain: TEE judges, scripted agents, meta-tx relayer, sim + testnet runners",
+  "engines": {
+    "node": ">=22.18"
+  },
+  "scripts": {
+    "test": "node --test test/protocol.test.ts",
+    "sim": "node src/sim.ts",
+    "verify": "node src/verify.ts",
+    "status": "node src/status.ts",
+    "setup": "node src/setup.ts",
+    "testnet": "node src/testnet.ts",
+    "fixture": "node src/fixture.ts"
+  },
+  "dependencies": {
+    "@noble/curves": "2.4.0",
+    "@noble/hashes": "2.4.0",
+    "near-api-js": "7.4.0"
+  }
+}

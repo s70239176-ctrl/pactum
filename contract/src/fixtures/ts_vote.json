@@ -1,0 +1,8 @@
+{
+  "model": "sim/fixture-model",
+  "signing_address": "19e7e376e7c213b7e7e7e46cc70a5dd086daff2a",
+  "judge_id": 0,
+  "request_body": "{\"model\":\"sim/fixture-model\",\"messages\":[{\"role\":\"user\",\"content\":\"pactum:v1|pactum.testnet|0|bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb judge\"}]}",
+  "response_body": "{\"id\":\"sim-cc7ca336a41b5b12\",\"object\":\"chat.completion\",\"model\":\"sim/fixture-model\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"{\\\"verdict\\\":\\\"CRITICAL_BREACH\\\",\\\"metric_bps\\\":4000,\\\"rationale\\\":\\\"fixture\\\"}\"},\"finish_reason\":\"stop\"}]}",
+  "signature": "0xfc9a54742a1c5ad09d17afb6d2359f781c6202426f26d1a4e42e0cb6365be29e0cae58144060d83feeeb3da692b5d88ad33b5f13aea5c21e9028df1d14b4cd161b"
+}

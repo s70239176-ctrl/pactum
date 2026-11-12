@@ -1,0 +1,687 @@
+{
+  "generated": "2026-11-12T19:08:42.934Z",
+  "mode": "simulation",
+  "contract": "pactum.sim.testnet",
+  "timeline": [
+    {
+      "t": 0,
+      "type": "intro",
+      "text": "Pactum sim: contract pactum.sim.testnet, 3 TEE judges (simulation), quorum 2",
+      "contract": "pactum.sim.testnet",
+      "judges": [
+        {
+          "id": 0,
+          "model": "sim/deepseek-ai/DeepSeek-V3.1",
+          "signing_address": "19e7e376e7c213b7e7e7e46cc70a5dd086daff2a",
+          "kind": "ProviderTee",
+          "attestation_sha256": "1e92fde4a258bd61824027492d0e2ba77e591bf6cfdc14a70a4352fd2ec036cc",
+          "active": true,
+          "name": "Justice Halvard"
+        },
+        {
+          "id": 1,
+          "model": "sim/openai/gpt-oss-120b",
+          "signing_address": "1563915e194d8cfba1943570603f7606a3115508",
+          "kind": "ProviderTee",
+          "attestation_sha256": "66137240c283f9b643f65cb2c6818aab53caa30f107b25d0c3cea83edc0e7e0d",
+          "active": true,
+          "name": "Arbiter Okonkwo"
+        },
+        {
+          "id": 2,
+          "model": "sim/Qwen/Qwen3-30B-A3B-Instruct-2507",
+          "signing_address": "5cbdd86a2fa8dc4bddd8a8f69dba48572eec07fb",
+          "kind": "ProviderTee",
+          "attestation_sha256": "5f86b814a0be69a85cbf0f8cb6caaa07ed0544b812ee7c93f8eca8762c883f44",
+          "active": true,
+          "name": "Skeptic Varga"
+        }
+      ]
+    },
+    {
+      "t": 1,
+      "type": "intents_quote",
+      "text": "Funding leg: collateral would arrive via NEAR Intents 1-Click (run `npm run sim -- --quote` for a live dry quote). Sim credits it directly.",
+      "live": false
+    },
+    {
+      "t": 2,
+      "type": "enclave_registered",
+      "enclave": "atlas.pactum.sim.testnet",
+      "chain": "base",
+      "collateral": 20,
+      "text": "Enclave atlas.pactum.sim.testnet created with a function-call key (7 methods, 0.25 NEAR allowance); 20 NEAR collateral"
+    },
+    {
+      "t": 3,
+      "type": "enclave_registered",
+      "enclave": "meridian.pactum.sim.testnet",
+      "chain": "near",
+      "collateral": 20,
+      "text": "Enclave meridian.pactum.sim.testnet created with a function-call key (7 methods, 0.25 NEAR allowance); 20 NEAR collateral"
+    },
+    {
+      "t": 4,
+      "type": "enclave_registered",
+      "enclave": "corvid.pactum.sim.testnet",
+      "chain": "solana",
+      "collateral": 15,
+      "text": "Enclave corvid.pactum.sim.testnet created with a function-call key (7 methods, 0.25 NEAR allowance); 15 NEAR collateral"
+    },
+    {
+      "t": 5,
+      "type": "enclave_registered",
+      "enclave": "lyra.pactum.sim.testnet",
+      "chain": "ethereum",
+      "collateral": 15,
+      "text": "Enclave lyra.pactum.sim.testnet created with a function-call key (7 methods, 0.25 NEAR allowance); 15 NEAR collateral"
+    },
+    {
+      "t": 6,
+      "type": "policy",
+      "enclave": "corvid.pactum.sim.testnet",
+      "text": "corvid sets a self-imposed bond cap of 8 NEAR and guardian.testnet"
+    },
+    {
+      "t": 7,
+      "type": "offer",
+      "scenario": 0,
+      "from": "atlas.pactum.sim.testnet",
+      "to": "meridian.pactum.sim.testnet",
+      "text": "atlas: Opening: 99% with a 8 NEAR bond, we carry the downside."
+    },
+    {
+      "t": 8,
+      "type": "offer",
+      "scenario": 0,
+      "from": "meridian.pactum.sim.testnet",
+      "to": "atlas.pactum.sim.testnet",
+      "text": "meridian: Counter: 98% is realistic, bond 5 NEAR."
+    },
+    {
+      "t": 9,
+      "type": "offer",
+      "scenario": 0,
+      "from": "atlas.pactum.sim.testnet",
+      "to": "meridian.pactum.sim.testnet",
+      "text": "atlas: Meet in the middle: 98.5%, 6 NEAR."
+    },
+    {
+      "t": 10,
+      "type": "offer",
+      "scenario": 0,
+      "from": "meridian.pactum.sim.testnet",
+      "to": "atlas.pactum.sim.testnet",
+      "text": "meridian: ACCEPT"
+    },
+    {
+      "t": 11,
+      "type": "treaty_ratified",
+      "treaty": {
+        "id": 0,
+        "a": "atlas.pactum.sim.testnet",
+        "b": "meridian.pactum.sim.testnet",
+        "bond_a": "3",
+        "bond_b": "6",
+        "terms_hash": "098e16e378c42df222313e164ff6c29c87e2a783f807a8db31e5d7ac2d5bceb7",
+        "params": {
+          "uptime_floor_bps": 9850
+        }
+      },
+      "text": "Treaty #0 atlas<->meridian ACTIVE via meta-tx; escrow 3 + 6 NEAR; terms_hash 098e16e378c4..."
+    },
+    {
+      "t": 12,
+      "type": "offer",
+      "scenario": 1,
+      "from": "corvid.pactum.sim.testnet",
+      "to": "lyra.pactum.sim.testnet",
+      "text": "corvid: Opening: 99.5% with a 8 NEAR bond, we carry the downside."
+    },
+    {
+      "t": 13,
+      "type": "offer",
+      "scenario": 1,
+      "from": "lyra.pactum.sim.testnet",
+      "to": "corvid.pactum.sim.testnet",
+      "text": "lyra: Counter: 98.5% is realistic, bond 6 NEAR."
+    },
+    {
+      "t": 14,
+      "type": "offer",
+      "scenario": 1,
+      "from": "corvid.pactum.sim.testnet",
+      "to": "lyra.pactum.sim.testnet",
+      "text": "corvid: Meet in the middle: 99%, 7 NEAR."
+    },
+    {
+      "t": 15,
+      "type": "offer",
+      "scenario": 1,
+      "from": "lyra.pactum.sim.testnet",
+      "to": "corvid.pactum.sim.testnet",
+      "text": "lyra: ACCEPT"
+    },
+    {
+      "t": 16,
+      "type": "treaty_ratified",
+      "treaty": {
+        "id": 1,
+        "a": "corvid.pactum.sim.testnet",
+        "b": "lyra.pactum.sim.testnet",
+        "bond_a": "3",
+        "bond_b": "7",
+        "terms_hash": "3c57769f1c9432f7799de4cade013af0667f145a71d6c10995545e18e56eab2f",
+        "params": {
+          "claims_sla_bps": 9900
+        }
+      },
+      "text": "Treaty #1 corvid<->lyra ACTIVE via meta-tx; escrow 3 + 7 NEAR; terms_hash 3c57769f1c94..."
+    },
+    {
+      "t": 17,
+      "type": "offer",
+      "scenario": 2,
+      "from": "lyra.pactum.sim.testnet",
+      "to": "corvid.pactum.sim.testnet",
+      "text": "lyra: Opening: 97% with a 6 NEAR bond, we carry the downside."
+    },
+    {
+      "t": 18,
+      "type": "offer",
+      "scenario": 2,
+      "from": "corvid.pactum.sim.testnet",
+      "to": "lyra.pactum.sim.testnet",
+      "text": "corvid: Counter: 93% is realistic, bond 3 NEAR."
+    },
+    {
+      "t": 19,
+      "type": "offer",
+      "scenario": 2,
+      "from": "lyra.pactum.sim.testnet",
+      "to": "corvid.pactum.sim.testnet",
+      "text": "lyra: Meet in the middle: 95%, 4 NEAR."
+    },
+    {
+      "t": 20,
+      "type": "offer",
+      "scenario": 2,
+      "from": "corvid.pactum.sim.testnet",
+      "to": "lyra.pactum.sim.testnet",
+      "text": "corvid: ACCEPT"
+    },
+    {
+      "t": 21,
+      "type": "treaty_ratified",
+      "treaty": {
+        "id": 2,
+        "a": "lyra.pactum.sim.testnet",
+        "b": "corvid.pactum.sim.testnet",
+        "bond_a": "3",
+        "bond_b": "4",
+        "terms_hash": "59371b6f22432d916d75e5cc8f99b20f119218a92206463d849bd5375b6f55dd",
+        "params": {
+          "quote_uptime_bps": 9500
+        }
+      },
+      "text": "Treaty #2 lyra<->corvid ACTIVE via meta-tx; escrow 3 + 4 NEAR; terms_hash 59371b6f2243..."
+    },
+    {
+      "t": 22,
+      "type": "rob_attempt",
+      "rule": "R-ROB-1",
+      "who": "meridian.pactum.sim.testnet",
+      "ok": false,
+      "refusal": "insufficient free collateral",
+      "text": "R-ROB-1 meridian withdraws its locked 6 NEAR bond + everything -> REFUSED: insufficient free collateral"
+    },
+    {
+      "t": 23,
+      "type": "rob_attempt",
+      "rule": "R-ROB-2",
+      "who": "meridian.pactum.sim.testnet",
+      "ok": false,
+      "refusal": "MethodNameMismatch: set_quorum is not in the key's allow-list",
+      "text": "R-ROB-2 meridian's agent key calls set_quorum(1) -> REFUSED: MethodNameMismatch: set_quorum is not in the key's allow-list"
+    },
+    {
+      "t": 24,
+      "type": "rob_attempt",
+      "rule": "R-ROB-3",
+      "who": "meridian.pactum.sim.testnet",
+      "ok": false,
+      "refusal": "DepositWithFunctionCallAccessKey: function-call keys cannot attach deposits",
+      "text": "R-ROB-3 meridian's agent key transfers 5 NEAR out -> REFUSED: DepositWithFunctionCallAccessKey: function-call keys cannot attach deposits"
+    },
+    {
+      "t": 25,
+      "type": "rob_attempt",
+      "rule": "R-ROB-4",
+      "who": "corvid.pactum.sim.testnet",
+      "ok": false,
+      "refusal": "party only",
+      "text": "R-ROB-4 corvid files a dispute on atlas<->meridian -> REFUSED: party only"
+    },
+    {
+      "t": 26,
+      "type": "rob_attempt",
+      "rule": "R-ROB-7",
+      "who": "lyra.pactum.sim.testnet",
+      "ok": false,
+      "refusal": "terms changed; refusing to ratify",
+      "text": "R-ROB-7 lyra ratifies a treaty with altered terms -> REFUSED: terms changed; refusing to ratify"
+    },
+    {
+      "t": 27,
+      "type": "rob_attempt",
+      "rule": "R-ROB-10",
+      "who": "corvid.pactum.sim.testnet",
+      "ok": false,
+      "refusal": "bond exceeds enclave's self-imposed cap",
+      "text": "R-ROB-10 corvid proposes a 9 NEAR bond above its own 8 NEAR cap -> REFUSED: bond exceeds enclave's self-imposed cap"
+    },
+    {
+      "t": 28,
+      "type": "dispute_filed",
+      "dispute": {
+        "id": 0,
+        "treaty_id": 0,
+        "plaintiff": "atlas.pactum.sim.testnet",
+        "defendant": "meridian.pactum.sim.testnet",
+        "evidence_sha256": "0d9a93bc3b0e5136e420067111caa3ccdde0e5e8cefa72f94296d5df531dc8d4"
+      },
+      "text": "atlas files dispute #0 vs meridian: \"Meridian's oracle was down for most of epoch 812; our vault could not liquidate.\" (evidence sha256 0d9a93bc3b0e..., bond 0.5 NEAR)"
+    },
+    {
+      "t": 29,
+      "type": "judge_vote",
+      "dispute": 0,
+      "judge": 0,
+      "verdict": "CRITICAL_BREACH",
+      "metric_bps": 3843,
+      "mode": "simulation",
+      "signature": "0x6ded2f2d1039caed...",
+      "text": "Justice Halvard [simulation] -> CRITICAL_BREACH (3843 bps), TEE sig 0x6ded2f2d1039..."
+    },
+    {
+      "t": 30,
+      "type": "judge_vote",
+      "dispute": 0,
+      "judge": 1,
+      "verdict": "CRITICAL_BREACH",
+      "metric_bps": 3843,
+      "mode": "simulation",
+      "signature": "0xea044b9846b5c5f5...",
+      "text": "Arbiter Okonkwo [simulation] -> CRITICAL_BREACH (3843 bps), TEE sig 0xea044b9846b5..."
+    },
+    {
+      "t": 31,
+      "type": "judge_vote",
+      "dispute": 0,
+      "judge": 2,
+      "verdict": "CRITICAL_BREACH",
+      "metric_bps": 3843,
+      "mode": "simulation",
+      "signature": "0x0e7b0f6015e8be76...",
+      "text": "Skeptic Varga [simulation] -> CRITICAL_BREACH (3843 bps), TEE sig 0x0e7b0f6015e8..."
+    },
+    {
+      "t": 32,
+      "type": "rob_attempt",
+      "rule": "R-ROB-5",
+      "who": "relayer",
+      "ok": false,
+      "refusal": "no quorum among valid judge signatures",
+      "text": "R-ROB-5 relayer submits judge 0's vote twice, once in judge 1's slot -> REFUSED: no quorum among valid judge signatures"
+    },
+    {
+      "t": 33,
+      "type": "rob_attempt",
+      "rule": "R-ROB-5b",
+      "who": "relayer",
+      "ok": false,
+      "refusal": "no quorum among valid judge signatures",
+      "text": "R-ROB-5b relayer rewrites a judge's verdict in the response body -> REFUSED: no quorum among valid judge signatures"
+    },
+    {
+      "t": 34,
+      "type": "ruling",
+      "dispute": 0,
+      "raw": "CRITICAL_BREACH",
+      "final": "CRITICAL_BREACH",
+      "metric_bps": 3843,
+      "judges": [
+        0,
+        1,
+        2
+      ],
+      "text": "RULING #0: 3/3 TEE signatures recovered on-chain -> CRITICAL_BREACH"
+    },
+    {
+      "t": 35,
+      "type": "payout",
+      "dispute": 0,
+      "chain": "base",
+      "to": "0x7a11a5000000000000000000000000000000a71a",
+      "enclave": "atlas.pactum.sim.testnet",
+      "amount": "6",
+      "text": "6 NEAR queued for base:0x7a11a5000000000000000000000000000000a71a -> Chain Signatures sign(path=pactum/atlas.pactum.sim.testnet/0, domain=0)"
+    },
+    {
+      "t": 36,
+      "type": "treaty_state",
+      "treaty": 0,
+      "status": "Closed",
+      "bond_a": "0",
+      "bond_b": "0",
+      "text": "Treaty #0 Closed; escrow 0 + 0 NEAR"
+    },
+    {
+      "t": 37,
+      "type": "dispute_filed",
+      "dispute": {
+        "id": 1,
+        "treaty_id": 1,
+        "plaintiff": "corvid.pactum.sim.testnet",
+        "defendant": "lyra.pactum.sim.testnet",
+        "evidence_sha256": "d178f541da86502e0d6171977c8001dc1e73b7d7279766a4d5c41950e473dda4"
+      },
+      "text": "corvid files dispute #1 vs lyra: \"Lyra refused a valid claim.\" (evidence sha256 d178f541da86..., bond 0.5 NEAR)"
+    },
+    {
+      "t": 38,
+      "type": "judge_vote",
+      "dispute": 1,
+      "judge": 0,
+      "verdict": "MALICIOUS_REPORT",
+      "metric_bps": 0,
+      "mode": "simulation",
+      "signature": "0x53f4397986a13fd8...",
+      "text": "Justice Halvard [simulation] -> MALICIOUS_REPORT (0 bps), TEE sig 0x53f4397986a1..."
+    },
+    {
+      "t": 39,
+      "type": "judge_vote",
+      "dispute": 1,
+      "judge": 1,
+      "verdict": "MALICIOUS_REPORT",
+      "metric_bps": 0,
+      "mode": "simulation",
+      "signature": "0x0dce11e12fbfcc9f...",
+      "text": "Arbiter Okonkwo [simulation] -> MALICIOUS_REPORT (0 bps), TEE sig 0x0dce11e12fbf..."
+    },
+    {
+      "t": 40,
+      "type": "judge_vote",
+      "dispute": 1,
+      "judge": 2,
+      "verdict": "MALICIOUS_REPORT",
+      "metric_bps": 0,
+      "mode": "simulation",
+      "signature": "0x66f2db270e858e5a...",
+      "text": "Skeptic Varga [simulation] -> MALICIOUS_REPORT (0 bps), TEE sig 0x66f2db270e85..."
+    },
+    {
+      "t": 41,
+      "type": "ruling",
+      "dispute": 1,
+      "raw": "MALICIOUS_REPORT",
+      "final": "MALICIOUS_REPORT",
+      "metric_bps": 0,
+      "judges": [
+        0,
+        1,
+        2
+      ],
+      "text": "RULING #1: 3/3 TEE signatures recovered on-chain -> MALICIOUS_REPORT"
+    },
+    {
+      "t": 42,
+      "type": "treaty_state",
+      "treaty": 1,
+      "status": "Active",
+      "bond_a": "3",
+      "bond_b": "7",
+      "text": "Treaty #1 Active; escrow 3 + 7 NEAR"
+    },
+    {
+      "t": 43,
+      "type": "dispute_filed",
+      "dispute": {
+        "id": 2,
+        "treaty_id": 2,
+        "plaintiff": "lyra.pactum.sim.testnet",
+        "defendant": "corvid.pactum.sim.testnet",
+        "evidence_sha256": "e9c1de4daeee26d6e4ecf338776f66c606baece20dcd486521416be87c6b8e80"
+      },
+      "text": "lyra files dispute #2 vs corvid: \"Corvid pulled its quotes during congestion.\" (evidence sha256 e9c1de4daeee..., bond 0.5 NEAR)"
+    },
+    {
+      "t": 44,
+      "type": "judge_vote",
+      "dispute": 2,
+      "judge": 0,
+      "verdict": "FEED_CONFLICT",
+      "metric_bps": 0,
+      "mode": "simulation",
+      "signature": "0x51f884715e35262c...",
+      "text": "Justice Halvard [simulation] -> FEED_CONFLICT (0 bps), TEE sig 0x51f884715e35..."
+    },
+    {
+      "t": 45,
+      "type": "judge_vote",
+      "dispute": 2,
+      "judge": 1,
+      "verdict": "FEED_CONFLICT",
+      "metric_bps": 0,
+      "mode": "simulation",
+      "signature": "0x11a5024b608b4067...",
+      "text": "Arbiter Okonkwo [simulation] -> FEED_CONFLICT (0 bps), TEE sig 0x11a5024b608b..."
+    },
+    {
+      "t": 46,
+      "type": "judge_vote",
+      "dispute": 2,
+      "judge": 2,
+      "verdict": "FEED_CONFLICT",
+      "metric_bps": 0,
+      "mode": "simulation",
+      "signature": "0xc7c11bc67edf3509...",
+      "text": "Skeptic Varga [simulation] -> FEED_CONFLICT (0 bps), TEE sig 0xc7c11bc67edf..."
+    },
+    {
+      "t": 47,
+      "type": "ruling",
+      "dispute": 2,
+      "raw": "FEED_CONFLICT",
+      "final": "FEED_CONFLICT",
+      "metric_bps": 0,
+      "judges": [
+        0,
+        1,
+        2
+      ],
+      "text": "RULING #2: 3/3 TEE signatures recovered on-chain -> FEED_CONFLICT"
+    },
+    {
+      "t": 48,
+      "type": "treaty_state",
+      "treaty": 2,
+      "status": "Active",
+      "bond_a": "3",
+      "bond_b": "4",
+      "text": "Treaty #2 Active; escrow 3 + 4 NEAR"
+    },
+    {
+      "t": 49,
+      "type": "frozen",
+      "enclave": "corvid.pactum.sim.testnet",
+      "text": "guardian.testnet freezes corvid (suspected key compromise)"
+    },
+    {
+      "t": 50,
+      "type": "rob_attempt",
+      "rule": "R-ROB-9",
+      "who": "corvid.pactum.sim.testnet",
+      "ok": false,
+      "refusal": "enclave is frozen by its guardian",
+      "text": "R-ROB-9 frozen corvid tries to withdraw 1 NEAR -> REFUSED: enclave is frozen by its guardian"
+    },
+    {
+      "t": 51,
+      "type": "snapshot",
+      "snapshot": {
+        "enclaves": [
+          {
+            "account": "atlas.pactum.sim.testnet",
+            "name": "atlas",
+            "chain": "base",
+            "free": "20",
+            "locked": "0",
+            "frozen": false,
+            "score": 530,
+            "rep": {
+              "ratified": 1,
+              "honored": 0,
+              "breaches": 0,
+              "elevated": 0,
+              "malicious": 0,
+              "disputes_won": 1
+            }
+          },
+          {
+            "account": "meridian.pactum.sim.testnet",
+            "name": "meridian",
+            "chain": "near",
+            "free": "14",
+            "locked": "0",
+            "frozen": false,
+            "score": 310,
+            "rep": {
+              "ratified": 1,
+              "honored": 0,
+              "breaches": 1,
+              "elevated": 0,
+              "malicious": 0,
+              "disputes_won": 0
+            }
+          },
+          {
+            "account": "corvid.pactum.sim.testnet",
+            "name": "corvid",
+            "chain": "solana",
+            "free": "6.5",
+            "locked": "8",
+            "frozen": true,
+            "score": 370,
+            "rep": {
+              "ratified": 2,
+              "honored": 0,
+              "breaches": 0,
+              "elevated": 0,
+              "malicious": 1,
+              "disputes_won": 0
+            }
+          },
+          {
+            "account": "lyra.pactum.sim.testnet",
+            "name": "lyra",
+            "chain": "ethereum",
+            "free": "5.5",
+            "locked": "10",
+            "frozen": false,
+            "score": 520,
+            "rep": {
+              "ratified": 2,
+              "honored": 0,
+              "breaches": 0,
+              "elevated": 0,
+              "malicious": 0,
+              "disputes_won": 0
+            }
+          }
+        ],
+        "treaties": [
+          {
+            "id": 0,
+            "a": "atlas.pactum.sim.testnet",
+            "b": "meridian.pactum.sim.testnet",
+            "status": "Closed",
+            "bond_a": "0",
+            "bond_b": "0"
+          },
+          {
+            "id": 1,
+            "a": "corvid.pactum.sim.testnet",
+            "b": "lyra.pactum.sim.testnet",
+            "status": "Active",
+            "bond_a": "3",
+            "bond_b": "7"
+          },
+          {
+            "id": 2,
+            "a": "lyra.pactum.sim.testnet",
+            "b": "corvid.pactum.sim.testnet",
+            "status": "Active",
+            "bond_a": "3",
+            "bond_b": "4"
+          },
+          {
+            "id": 3,
+            "a": "corvid.pactum.sim.testnet",
+            "b": "lyra.pactum.sim.testnet",
+            "status": "Proposed",
+            "bond_a": "1",
+            "bond_b": "1"
+          }
+        ],
+        "disputes": [
+          {
+            "id": 0,
+            "treaty_id": 0,
+            "plaintiff": "atlas.pactum.sim.testnet",
+            "defendant": "meridian.pactum.sim.testnet",
+            "status": "Resolved",
+            "verdict": "CRITICAL_BREACH",
+            "raw": "CRITICAL_BREACH",
+            "metric_bps": 3843
+          },
+          {
+            "id": 1,
+            "treaty_id": 1,
+            "plaintiff": "corvid.pactum.sim.testnet",
+            "defendant": "lyra.pactum.sim.testnet",
+            "status": "Resolved",
+            "verdict": "MALICIOUS_REPORT",
+            "raw": "MALICIOUS_REPORT",
+            "metric_bps": 0
+          },
+          {
+            "id": 2,
+            "treaty_id": 2,
+            "plaintiff": "lyra.pactum.sim.testnet",
+            "defendant": "corvid.pactum.sim.testnet",
+            "status": "Resolved",
+            "verdict": "FEED_CONFLICT",
+            "raw": "FEED_CONFLICT",
+            "metric_bps": 0
+          }
+        ],
+        "payouts": [
+          {
+            "id": 0,
+            "dispute_id": 0,
+            "to": "atlas.pactum.sim.testnet",
+            "chain": "base",
+            "address": "0x7a11a5000000000000000000000000000000a71a",
+            "amount": "6",
+            "status": "Pending",
+            "path": "pactum/atlas.pactum.sim.testnet/0"
+          }
+        ],
+        "liabilities": "70"
+      },
+      "text": "Final: atlas free 20 / locked 0 / trust 530 | meridian free 14 / locked 0 / trust 310 | corvid free 6.5 / locked 8 / trust 370 | lyra free 5.5 / locked 10 / trust 520"
+    }
+  ]
+}
