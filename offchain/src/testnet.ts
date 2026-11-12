@@ -30,7 +30,7 @@ const rec = (step: string, proves: string, r: TxResult, expectFail = false) => {
 async function main() {
   if (NETWORK !== "testnet") throw new Error("this script is testnet-only (P-2)");
   const C = contractId();
-  console.log(`Plan (network ${NETWORK}, contract ${C}):\n  ${process.argv.includes("--deploy") ? "deploy + init contract; " : ""}register 3 judges, 3 enclaves; 1 treaty via meta-tx; 8 rob attempts; 1 dispute; TEE votes; settlement; Chain Signatures request.\n  Spends roughly 5 testnet NEAR from OWNER.`);
+  console.log(`Plan (network ${NETWORK}, contract ${C}):\n  ${process.argv.includes("--deploy") ? "deploy + init contract; " : ""}register 3 judges, 3 enclaves; 1 treaty via meta-tx; 8 rob attempts; 1 dispute; TEE votes; settlement; Chain Signatures request.\n  Spends roughly 6-7 testnet NEAR from OWNER (contract storage + 3 x 0.6 enclave deposits + gas).`);
   if (!process.argv.includes("--yes")) { console.log("\nNothing signed. Re-run with --yes to execute."); return; }
 
   const owner = accountFromEnv("OWNER");
@@ -43,7 +43,7 @@ async function main() {
       const envFile = new URL(".env", root);
       writeFileSync(envFile, readFileSync(envFile, "utf8").replace(/^PACTUM_CONTRACT_KEY=.*$/m, `PACTUM_CONTRACT_KEY=${kp.toString()}`));
     }
-    const created = await owner.createSubAccount({ accountOrPrefix: C, publicKey: kp.getPublicKey(), nearToTransfer: N("6") }).then((r) => ({ ok: true, hash: (r as { transaction: { hash: string } }).transaction.hash }), (e) => ({ ok: false, hash: "", error: String(e) }));
+    const created = await owner.createSubAccount({ accountOrPrefix: C, publicKey: kp.getPublicKey(), nearToTransfer: N(String(Math.ceil(wasm.length / 100_000) + 1.5)) }).then((r) => ({ ok: true, hash: (r as { transaction: { hash: string } }).transaction.hash }), (e) => ({ ok: false, hash: "", error: String(e) }));
     rec("create contract account", "named sub-account for the protocol (A-1)", { ...created, url: EXPLORER + created.hash } as TxResult);
     const contractAcct = agentAccount(C, kp.toString());
     const dep = await contractAcct.signAndSendTransaction({ receiverId: C, actions: [actions.deployContract(wasm), actions.functionCall("new", { owner: owner.accountId, treasury: owner.accountId, quorum: 2, mpc_signer: "v1.signer-prod.testnet" }, teraToGas("100"), 0n)], throwOnFailure: false });
@@ -80,7 +80,7 @@ async function main() {
     if (await view("get_enclave", { account: ids[n] })) continue;
     const pub = KeyPair.fromString(key as KeyPairString).getPublicKey().toString();
     const payout = n === "atlas" ? { chain: "base", address: "0x7a11a5000000000000000000000000000000a71a" } : { chain: "near", address: owner.accountId };
-    rec(`register enclave ${n}`, `sub-account ${ids[n]} created with fc key ${pub.slice(0, 20)}… (methods + 0.25 NEAR allowance)`, await call(owner, "register_enclave", { name: n, agent_public_key: pub, beneficiary: owner.accountId, payout, max_bond: n === "mallory" ? Ys("0.5") : null, guardian: owner.accountId }, N("1.3"), 150));
+    rec(`register enclave ${n}`, `sub-account ${ids[n]} created with fc key ${pub.slice(0, 20)}… (methods + 0.25 NEAR allowance)`, await call(owner, "register_enclave", { name: n, agent_public_key: pub, beneficiary: owner.accountId, payout, max_bond: n === "mallory" ? Ys("0.25") : null, guardian: owner.accountId }, N("0.6"), 150));
   }
   const agent = (n: string) => agentAccount(ids[n], process.env[`${n.toUpperCase()}_AGENT_KEY`]!);
   const keys = await provider.viewAccessKeyList({ accountId: ids.atlas });
@@ -88,20 +88,20 @@ async function main() {
 
   // --- treaty via meta transactions (gasless for agents)
   const terms = `Meridian keeps the ETH/USD oracle consumed by Atlas live at >= 98.50% (9850 bps) measured by two independent monitors. Atlas pays 0.05 NEAR per epoch.`;
-  const p = rec("propose_treaty (meta-tx)", "atlas proposes; 0.3 NEAR bond moves free->locked; relayer paid gas", await metaCall(agent("atlas"), relayer, "propose_treaty", { counterparty: ids.meridian, terms, bond: Ys("0.3"), counter_bond: Ys("0.6"), duration_ns: String(30 * 86_400e9), notice_ns: String(3_600e9), params: { uptime_floor_bps: 9850 }, telemetry_urls: [] }));
+  const p = rec("propose_treaty (meta-tx)", "atlas proposes; 0.2 NEAR bond moves free->locked; relayer paid gas", await metaCall(agent("atlas"), relayer, "propose_treaty", { counterparty: ids.meridian, terms, bond: Ys("0.2"), counter_bond: Ys("0.3"), duration_ns: String(30 * 86_400e9), notice_ns: String(3_600e9), params: { uptime_floor_bps: 9850 }, telemetry_urls: [] }));
   const treaties = await view<Array<{ id: number; terms_hash: string; status: string }>>("list_treaties", { from: 0, limit: 200 });
   const t = treaties.filter((x) => x.status === "Proposed").at(-1)!;
   void p;
-  rec("ratify (meta-tx)", "meridian ratifies exact terms_hash; treaty ACTIVE; 0.6 NEAR escrowed", await metaCall(agent("meridian"), relayer, "ratify", { treaty_id: t.id, terms_hash: t.terms_hash }));
+  rec("ratify (meta-tx)", "meridian ratifies exact terms_hash; treaty ACTIVE; 0.3 NEAR escrowed", await metaCall(agent("meridian"), relayer, "ratify", { treaty_id: t.id, terms_hash: t.terms_hash }));
 
   // --- rob / break attempts: each must FAIL on-chain (RULES.md Part G)
-  rec("R-ROB-1 withdraw locked bond", "escrow cannot be withdrawn", await metaCall(agent("meridian"), relayer, "withdraw_free_collateral", { amount: Ys("1.2") }), true);
+  rec("R-ROB-1 withdraw locked bond", "escrow cannot be withdrawn", await metaCall(agent("meridian"), relayer, "withdraw_free_collateral", { amount: Ys("0.4") }), true);
   rec("R-ROB-2 call set_quorum with agent key", "function-call key method allow-list enforced by the runtime", await metaCall(agent("meridian"), relayer, "set_quorum", { quorum: 1 }), true);
   rec("R-ROB-3 attach deposit with agent key", "function-call keys cannot move NEAR", await metaCall(agent("meridian"), relayer, "deposit_collateral", { enclave: ids.mallory }, N("0.5")), true);
   rec("R-ROB-4 outsider files dispute", "only treaty parties can dispute", await metaCall(agent("mallory"), relayer, "file_dispute", { treaty_id: t.id, allegation: "x", evidence_uri: "https://example.com/x", evidence_sha256: "a".repeat(64), dispute_bond: Ys("0.1") }), true);
   rec("R-ROB-7 ratify altered terms", "ratify must quote the exact terms hash", await metaCall(agent("atlas"), relayer, "ratify", { treaty_id: t.id, terms_hash: "0".repeat(64) }), true);
   rec("R-ROB-8 agent calls owner method", "owner-only admin", await call(relayer === owner ? agentlessOutsider() : relayer, "set_quorum", { quorum: 1 }), true);
-  rec("R-ROB-10 bond above self-imposed cap", "mallory capped itself at 0.5 NEAR", await metaCall(agent("mallory"), relayer, "propose_treaty", { counterparty: ids.atlas, terms: "x", bond: Ys("0.8"), counter_bond: Ys("0.1"), duration_ns: "1000", notice_ns: "1" }), true);
+  rec("R-ROB-10 bond above self-imposed cap", "mallory capped itself at 0.25 NEAR", await metaCall(agent("mallory"), relayer, "propose_treaty", { counterparty: ids.atlas, terms: "x", bond: Ys("0.3"), counter_bond: Ys("0.1"), duration_ns: "1000", notice_ns: "1" }), true);
 
   // --- dispute with hash-bound evidence; two independent telemetry hosts
   const servers: Server[] = [];

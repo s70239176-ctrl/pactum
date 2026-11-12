@@ -1,0 +1,1 @@
+{"pactum_evidence":1,"contract":"pactum.stunner70.testnet","treaty_id":0,"accused":"meridian.pactum.stunner70.testnet","metric":"uptime_floor_bps","baseline_bps":9850,"feeds":["http://127.0.0.1:53288/t.json","http://127.0.0.1:53289/t.json"],"narrative":"ETH/USD feed stale 9h41m during a 14% drawdown."}

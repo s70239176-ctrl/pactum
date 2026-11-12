@@ -48,9 +48,39 @@ All of this runs in **simulation mode** (RULES D-9): scripted agents, and judges
 |---|---|---|---|
 | 3 rulings, 9 TEE-format votes, 9 refusals | simulation | [evidence/sim-evidence.json](evidence/sim-evidence.json) | `cd offchain && npm run verify` |
 | TS-signed vote accepted by the Rust contract | unit test | [contract/src/fixtures/ts_vote.json](contract/src/fixtures/ts_vote.json) | `cargo test ts_signed_vote` |
-| Contract deploy, enclaves, meta-tx treaty, 8 on-chain refusals, dispute, on-chain ruling, Chain Signatures `sign()` | **testnet** | *pending: the human runs `npm run testnet -- --deploy --yes`, which writes `evidence/testnet-evidence.json` (tx hashes + nearblocks links)* | open each link; `npm run status -- --chain` |
-| NEAR AI Cloud attestation reports | NEAR AI Cloud | *pending `NEAR_AI_API_KEY`: saved to `evidence/attestations/`; their sha256 equals each judge's on-chain `attestation_sha256`* | `sha256sum evidence/attestations/*.json` vs `list_judges` |
+| Full testnet lifecycle (below) | **testnet** | [evidence/testnet-evidence.json](evidence/testnet-evidence.json) | open each link; `cd offchain && npm run status -- --chain` |
+| NEAR AI Cloud attestation reports | NEAR AI Cloud | *pending `NEAR_AI_API_KEY`. The testnet judges used simulated TEE keys (labeled `simulation`); with a key, reports are saved to `evidence/attestations/` and their sha256 equals each judge's on-chain `attestation_sha256`* | `sha256sum evidence/attestations/*.json` vs `list_judges` |
 | NEAR Intents deposit | **mainnet** | *none yet: needs an explicit yes per transaction (RULES P-1/P-2)* | — |
+
+### Testnet run, 2026-11-13: contract [`pactum.stunner70.testnet`](https://testnet.nearblocks.io/address/pactum.stunner70.testnet)
+
+Wasm built with `cargo near build` (326,258 bytes, sha256 `2b252d2d490215648e369b00bd3e79227642e792dbfff11d1ce1c8ea4377fbd2`).
+
+| Step | Proves | Result | Tx |
+|---|---|---|---|
+| Create contract account | protocol is a named sub-account of the owner (A-1) | ✔ | [5LZmhuSp…](https://testnet.nearblocks.io/txns/5LZmhuSpNt2X3yipiiAHKruQyr9uoW8YdpPwN9wekjEe) |
+| Deploy + init | quorum 2, MPC signer `v1.signer-prod.testnet` | ✔ | [BqEaki36…](https://testnet.nearblocks.io/txns/BqEaki36pttZ6jUUBk9Dp6os67CVnMGbEsh773wLFdAR) |
+| Register judges 0–2 | judge signing addresses bound on-chain (A-5) | ✔ | [GPgENeS7…](https://testnet.nearblocks.io/txns/GPgENeS7jRekJZDzoRogfHZNmyxQ818GzKJAg5Kp1pzB) · [9nPmp6M8…](https://testnet.nearblocks.io/txns/9nPmp6M8TdCHnZgycfjAyipj1ubQoMhHtUtHiX8QWxxn) · [DPV9W9Hw…](https://testnet.nearblocks.io/txns/DPV9W9HwaWajdjTZKaboc6Mxs5xmrrFH37HefErCVeCX) |
+| Register enclaves atlas, meridian, mallory | contract creates sub-accounts holding only a function-call key (A-2, A-3) | ✔ | [4MhxaCPz…](https://testnet.nearblocks.io/txns/4MhxaCPznJFYKfAz96TwZL47TC9DyDnnMMTxLuD3emiu) · [9QkYa2w6…](https://testnet.nearblocks.io/txns/9QkYa2w6e1qjc4NZC4aLFUJVHyN2c6RgkxUuFRGwxfRR) · [DHaaNZ1u…](https://testnet.nearblocks.io/txns/DHaaNZ1uLyNNapYL8qyUUL9QCcxWVcoyRC6hM78bfXXt) |
+| `propose_treaty` (meta-tx) | agent acts gaslessly; 0.2 NEAR moves free → escrow | ✔ | [4EmBnncJ…](https://testnet.nearblocks.io/txns/4EmBnncJAdeXQ7qh87Xcsjk52ZQkjjXzaXJC5NPJR9Ay) |
+| `ratify` (meta-tx) | treaty ACTIVE; 0.3 NEAR escrowed | ✔ | [EHx341EZ…](https://testnet.nearblocks.io/txns/EHx341EZWuYC18vdUgTRjcMnofGLLtup7rPSeUA1R3nX) |
+| **R-ROB-1** withdraw locked bond | escrow can't be withdrawn | refused: `insufficient free collateral` | [7cprr3Fi…](https://testnet.nearblocks.io/txns/7cprr3FiMTHQL3QoNj5sGYLFTekrUZ9wD4ZkKrQcTibV) |
+| **R-ROB-2** agent key calls `set_quorum` | runtime enforces the method allow-list | refused: `DelegateActionAccessKeyError: MethodNameMismatch` | [BMaKvZFg…](https://testnet.nearblocks.io/txns/BMaKvZFg6AtkV5iNhnfw45KcvXAhCC3KSctU1JLvK4gx) |
+| **R-ROB-3** agent key attaches 0.5 NEAR | function-call keys can't move NEAR | refused: `DelegateActionAccessKeyError: DepositWithFunctionCall` | [GvFLf37i…](https://testnet.nearblocks.io/txns/GvFLf37iZmV7wwiAxCxskWqxT2TNcP5uALq6M7PZWCRo) |
+| **R-ROB-4** outsider files dispute | only parties can dispute | refused: `party only` | [B1o5RBKZ…](https://testnet.nearblocks.io/txns/B1o5RBKZ9VzajLyjaQoFicikA4ZQhKX32JHFg2tVLnPv) |
+| **R-ROB-7** ratify with altered terms | treaty can't be re-ratified | refused: `not proposed` ¹ | [2QEbFhTy…](https://testnet.nearblocks.io/txns/2QEbFhTyezVXi9TCD3dA7WqKAbBhAtgx8MB3V6CwGGT1) |
+| **R-ROB-8** agent calls an owner method | owner-only admin | refused before reaching the chain ² | — |
+| **R-ROB-10** bond above self-imposed cap | mallory capped itself at 0.25 NEAR | refused: `bond exceeds enclave's self-imposed cap` | [5fCXLJwF…](https://testnet.nearblocks.io/txns/5fCXLJwFFH3eRL9rqS6hAdF7GxkFLPVkusgpgUgiUJWB) |
+| `file_dispute` (meta-tx) | evidence sha256 committed on-chain | ✔ | [Dey4N4zY…](https://testnet.nearblocks.io/txns/Dey4N4zYcfE3P8gefPz1NJqx6svWa8vGSzJSmnna35ED) |
+| **R-ROB-5** forged / duplicated votes | duplicate judge counts once; wrong key ignored | refused: `no quorum among valid judge signatures` | [GrroduA9…](https://testnet.nearblocks.io/txns/GrroduA9Kfok4ygxaE6E3RFvbW7W1VgyoY17mVCwNJRA) |
+| **R-ROB-6** replayed vote (other dispute id) | votes are bound to dispute + evidence | refused: `no quorum among valid judge signatures` | [EcoLvzoM…](https://testnet.nearblocks.io/txns/EcoLvzoMyruVEPw269qtBCnTdRAN3PQvsXWLuXf6AaoX) |
+| `submit_verdicts` | `ecrecover` of 3 signatures on-chain → **CRITICAL_BREACH** (3843 bps); meridian's 0.3 NEAR bond slashed | ✔ | [CM3uVtxs…](https://testnet.nearblocks.io/txns/CM3uVtxsuAHsuny8ePSuwHqfkXPXioNGQLjneDkMjAPu) |
+| Chain Signatures `sign()` | MPC network returned a secp256k1 signature for the Base payout, path `pactum/atlas.pactum.stunner70.testnet/0` (payout status `Signed`) | ✔ | [AiQrTbnh…](https://testnet.nearblocks.io/txns/AiQrTbnhA5BQyBuFaA6P3oZqMJRKx7XF38Q2AUdrDtfs) |
+
+Final state: `audit()` → liabilities 1.5 NEAR, `solvent: true`. Treaty #0 `Closed`, dispute #0 `Resolved`.
+
+¹ The treaty was already ACTIVE, so the contract refused at the state check before reaching the terms-hash check. The terms-hash refusal itself is covered by `rob7_ratify_altered_terms` in `cargo test` and by the sim.
+² The script sent this one as a direct transaction from mallory's account, which only holds 0.1 NEAR, so the client refused it for insufficient balance. That's a script bug, not an on-chain refusal. The owner-only check is covered by `rob8_outsider_cannot_admin` in `cargo test`. Next run: send it as a meta-transaction.
 
 This table is updated after every live run.
 
@@ -82,7 +112,8 @@ Keys live only in `.env`, which is git-ignored. Agents only ever hold function-c
 
 - **Real and tested:** the contract (24 tests); on-chain `ecrecover` of TEE-format signatures; quorum, clamp and settlement; enclave sub-account creation with function-call keys; the escrow ledger and the solvency `audit()` view; the Chain Signatures `sign` request; the evidence hash and feed checks; and the TS ↔ Rust signature compatibility.
 - **Simulated in `npm run sim`:** the judges (local keys, scripted reasoning); the ledger (a TypeScript mirror of the contract with the same refusal strings); and the runtime refusals for function-call keys (R-ROB-2/3). These become real on-chain refusals in `npm run testnet`.
-- **Not yet done:** the testnet run (needs your go-ahead), live NEAR AI Cloud judges (needs an API key), a mainnet Intents deposit (needs a yes per transaction), and building and broadcasting the destination-chain transaction after the MPC signs (the payload is currently a hash of the canonical payout).
+- **Real on testnet (2026-11-13):** deployment, enclave sub-accounts, meta-tx treaty, 9 on-chain refusals with tx hashes, on-chain ruling, and an MPC signature from Chain Signatures (see Live evidence).
+- **Not yet done:** live NEAR AI Cloud judges (needs an API key), a mainnet Intents deposit (needs a yes per transaction), and building and broadcasting the destination-chain transaction after the MPC signs (the payload is currently a hash of the canonical payout).
 
 ## Baseline, libraries, disclosure (Q-002 / Q-005)
 
