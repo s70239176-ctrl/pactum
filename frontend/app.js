@@ -402,7 +402,7 @@
     const nRul = live ? m.disputes.filter((d) => d.status === "Resolved").length : 2;
     return `<div class="landing rx view-enter">
       <nav class="rx-nav" aria-label="Primary">
-        <a class="brand" href="#/">${I.logo}<span>Pactum</span></a>
+        <a class="brand" href="#/">${I.logo}<span>Pactum Protocol</span></a>
         <div class="rx-pill"><a href="#/verify">Verify</a><a href="#protocol">Protocol</a><a href="#/diplomacy">Network</a><a href="#/tribunal">Tribunal</a><a href="#/markets">Markets</a></div>
         <div class="rx-right"><a class="rx-link" href="${REPO}#readme" target="_blank" rel="noopener">Docs</a><a class="btn primary" href="#/verify">Rob it yourself ↗</a><button class="menu-btn" id="lmenu" aria-label="Open menu" aria-expanded="false">${I.menu}</button></div>
       </nav>
@@ -436,11 +436,11 @@
       <section class="rx-stats"><div><b>32</b><span>testnet transactions re-verified</span></div><div><b>${nOn}/${nOn}</b><span>recorded attacks refused</span></div><div><b>3/3</b><span>TEE signatures recovered on-chain</span></div><div><b>24</b><span>contract tests passing</span></div></section>
       <section class="rx-sec"><div class="rx-cta"><div class="eclipse small" aria-hidden="true"><div class="ring"></div></div><span class="rx-tag">Pactum</span><h2>Trust must be <span>enforceable.</span></h2><p class="intro">Connect a testnet wallet, create your own enclave, and try to rob a treaty. Every attempt is refused on-chain.</p><div class="ctas"><a class="btn primary lg" href="#/verify">Rob it yourself ↗</a><a class="btn lg" href="${REPO}" target="_blank" rel="noopener">View the repo</a></div></div></section>
       <footer class="rx-foot"><div class="cols">
-        <div><a class="brand" href="#/">${I.logo}<span>Pactum</span></a><p class="dim">The on-chain diplomatic layer for autonomous AI agents. Built for NEAR HACKATHON 2026.</p></div>
+        <div><a class="brand" href="#/">${I.logo}<span>Pactum Protocol</span></a><p class="dim">The on-chain diplomatic layer for autonomous AI agents. Built for NEAR HACKATHON 2026.</p></div>
         <div><h5>Product</h5><a href="#/verify">Verify</a><a href="#/command">Command</a><a href="#/tribunal">Tribunal</a><a href="#/markets">Bonded Markets</a><a href="#/events">Events</a></div>
         <div><h5>Evidence</h5><a href="${REPO}/blob/main/RULES.md" target="_blank" rel="noopener">RULES.md</a><a href="${REPO}/blob/main/evidence/testnet-evidence.json" target="_blank" rel="noopener">Testnet evidence</a><a href="${REPO}/tree/main/evidence/attestations" target="_blank" rel="noopener">Attestations</a><a href="${EXPLORER}/address/${esc(m?.contract || "pactum.stunner70.testnet")}" target="_blank" rel="noopener">Contract ↗</a></div>
         <div><h5>Project</h5><a href="${REPO}" target="_blank" rel="noopener">GitHub</a><a href="${REPO}/blob/main/ARCHITECTURE.md" target="_blank" rel="noopener">Architecture</a><a href="${REPO}/blob/main/LICENSE" target="_blank" rel="noopener">MIT License</a></div>
-      </div><div class="legal"><span>© 2026 Pactum · #NEARHackathon</span>${live && m.audit ? `<span><span class="dot" style="color:${m.audit.solvent ? "var(--ok)" : "var(--fail)"}"></span> contract ${m.audit.solvent ? "solvent" : "NOT solvent"} on testnet (audit)</span>` : `<span>NEAR testnet</span>`}</div><div class="giant" aria-hidden="true">PACTUM</div></footer>
+      </div><div class="legal"><span>© 2026 Pactum Protocol · #NEARHackathon</span>${live && m.audit ? `<span><span class="dot" style="color:${m.audit.solvent ? "var(--ok)" : "var(--fail)"}"></span> contract ${m.audit.solvent ? "solvent" : "NOT solvent"} on testnet (audit)</span>` : `<span>NEAR testnet</span>`}</div><div class="giant" aria-hidden="true">PACTUM</div></footer>
     </div>`;
   }
 
