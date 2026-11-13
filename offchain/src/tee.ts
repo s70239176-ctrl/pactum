@@ -11,6 +11,20 @@ import { keccak_256 } from "@noble/hashes/sha3.js";
 
 export const NEAR_AI_BASE = process.env.NEAR_AI_BASE ?? "https://cloud-api.near.ai/v1";
 
+/** fetch with retries on network errors / 5xx (flaky links) */
+export async function fetchRetry(url: string, init?: RequestInit, tries = 4): Promise<Response> {
+  let last: unknown;
+  for (let i = 0; i < tries; i++) {
+    try {
+      const r = await fetch(url, init);
+      if (r.status < 500) return r;
+      last = new Error(`HTTP ${r.status}`);
+    } catch (e) { last = e; }
+    await new Promise((ok) => setTimeout(ok, 2000 * (i + 1)));
+  }
+  throw last;
+}
+
 export const sha256hex = (b: string | Uint8Array) => createHash("sha256").update(b).digest("hex");
 const toHex = (b: Uint8Array) => Buffer.from(b).toString("hex");
 const fromHex = (h: string) => Uint8Array.from(Buffer.from(h.replace(/^0x/, ""), "hex"));
@@ -114,7 +128,7 @@ export class NearAiTee implements Tee {
     this.apiKey = apiKey;
   }
   async complete(requestBody: string) {
-    const r = await fetch(`${NEAR_AI_BASE}/chat/completions`, {
+    const r = await fetchRetry(`${NEAR_AI_BASE}/chat/completions`, {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${this.apiKey}` },
       body: requestBody,
@@ -125,7 +139,7 @@ export class NearAiTee implements Tee {
     const id = JSON.parse(response_body).id;
     // Signatures are cached on the serving node; retry as the docs advise.
     for (let i = 0; i < 8; i++) {
-      const s = await fetch(`${NEAR_AI_BASE}/signature/${id}?model=${encodeURIComponent(this.model)}&signing_algo=ecdsa`, { headers: { Authorization: `Bearer ${this.apiKey}` } });
+      const s = await fetchRetry(`${NEAR_AI_BASE}/signature/${id}?model=${encodeURIComponent(this.model)}&signing_algo=ecdsa`, { headers: { Authorization: `Bearer ${this.apiKey}` } });
       if (s.ok) {
         const j = await s.json();
         if (j.signature_kind === "gateway") this.kind = "Gateway";
@@ -140,7 +154,7 @@ export class NearAiTee implements Tee {
 /** Attestation for judge registration (A-5, X-4). Requires an API key. */
 export async function fetchAttestation(model: string, apiKey: string) {
   const nonce = randomBytes(32).toString("hex");
-  const r = await fetch(`${NEAR_AI_BASE}/attestation/report?model=${encodeURIComponent(model)}&signing_algo=ecdsa&nonce=${nonce}`, { headers: { Authorization: `Bearer ${apiKey}` } });
+  const r = await fetchRetry(`${NEAR_AI_BASE}/attestation/report?model=${encodeURIComponent(model)}&signing_algo=ecdsa&nonce=${nonce}`, { headers: { Authorization: `Bearer ${apiKey}` } });
   const raw = await r.text();
   if (!r.ok) throw new Error(`attestation HTTP ${r.status}: ${raw.slice(0, 200)}`);
   const j = JSON.parse(raw);

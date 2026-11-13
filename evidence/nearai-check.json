@@ -1,0 +1,39 @@
+{
+  "checked": "2026-11-13T01:13:00.925Z",
+  "results": [
+    {
+      "model": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
+      "attested_signing_address": "fe0071895500a9755c18044948ab4f4e1a7f337e",
+      "attestation_sha256": "78f34dd7d899e697ad18372a038694ffa2a6994eaf3e059cb4a92875f8c52b03",
+      "signature_kind": "ProviderTee",
+      "reply_signer": "fe0071895500a9755c18044948ab4f4e1a7f337e",
+      "recovered": "fe0071895500a9755c18044948ab4f4e1a7f337e",
+      "response_sha256": "71555b31d95af4992bc312f08d09b78362bdc3427663fab5052a3083da6d972b",
+      "content": "{\"verdict\":\"NORMAL\",\"metric_bps\":0,\"rationale\":\"check\"}",
+      "verified": true
+    },
+    {
+      "model": "Qwen/Qwen3.8-27B",
+      "attested_signing_address": "835ab53d20294ef795906dff21ae4c045336aa26",
+      "attestation_sha256": "76c4a17ef281a0631082e7027f28041ee7796c2d191a05a0aa5290056b5ba3b5",
+      "signature_kind": "ProviderTee",
+      "reply_signer": "835ab53d20294ef795906dff21ae4c045336aa26",
+      "recovered": "835ab53d20294ef795906dff21ae4c045336aa26",
+      "response_sha256": "979bb41f4be64f5d4e979fc600b5e6a2d80466df0f44c1f565bea5f5132da5db",
+      "content": "{\"verdict\":\"NORMAL\",\"metric_bps\":0,\"rationale\":\"check\"}",
+      "verified": true
+    },
+    {
+      "model": "z-ai/glm-5.3-flash",
+      "attested_signing_address": "3b753b4406613c5e70ae640508632b600424fa0c",
+      "attestation_sha256": "b99279bc258e95ef72d28d42fd54c652b9d754c7bb7b0cbcc1b157550701e02e",
+      "signature_kind": "ProviderTee",
+      "reply_signer": "3b753b4406613c5e70ae640508632b600424fa0c",
+      "recovered": "3b753b4406613c5e70ae640508632b600424fa0c",
+      "response_sha256": "9b057d1b0da900887aee1e0ea7d9d9cc53c5d0010137d34445c7494ab07ab1b8",
+      "content": "{\"verdict\":\"NORMAL\",\"metric_bps\":0,\"rationale\":\"check\"}",
+      "verified": true
+    }
+  ],
+  "note": "attestation_file entries were overwritten by later fetches; each fetch uses a fresh nonce. Per-key reports now live in evidence/attestations/<model>-<signer8>.json"
+}

@@ -50,7 +50,7 @@ All of this runs in **simulation mode** (RULES D-9): scripted agents, and judges
 | 3 rulings, 9 TEE-format votes, 9 refusals | simulation | [evidence/sim-evidence.json](evidence/sim-evidence.json) | `cd offchain && npm run verify` |
 | TS-signed vote accepted by the Rust contract | unit test | [contract/src/fixtures/ts_vote.json](contract/src/fixtures/ts_vote.json) | `cargo test ts_signed_vote` |
 | Full testnet lifecycle (below) | **testnet** | [evidence/testnet-evidence.json](evidence/testnet-evidence.json) | open each link; `cd offchain && npm run status -- --chain` |
-| NEAR AI Cloud attestation reports | NEAR AI Cloud | *pending `NEAR_AI_API_KEY`. The testnet judges used simulated TEE keys (labeled `simulation`); with a key, reports are saved to `evidence/attestations/` and their sha256 equals each judge's on-chain `attestation_sha256`* | `sha256sum evidence/attestations/*.json` vs `list_judges` |
+| **Real TEE judges**: NEAR AI Cloud attestation reports and signed votes | NEAR AI Cloud + **testnet** | [evidence/attestations/](evidence/attestations/), [evidence/nearai-check.json](evidence/nearai-check.json), [evidence/testnet-real-judges.json](evidence/testnet-real-judges.json) | `cd offchain && npm run nearai:check` (signature → attested address, no tx). Each report in `evidence/attestations/<model>-<signer>.json` names the judge key registered on-chain (`list_judges`) |
 | NEAR Intents deposit | **mainnet** | *none yet: needs an explicit yes per transaction (RULES P-1/P-2)* | — |
 
 ### Testnet run, 2026-11-13: contract [`pactum.stunner70.testnet`](https://testnet.nearblocks.io/address/pactum.stunner70.testnet)
@@ -83,6 +83,30 @@ Final state: `audit()` → liabilities 1.5 NEAR, `solvent: true`. Treaty #0 `Clo
 ¹ The treaty was already ACTIVE, so the contract refused at the state check before reaching the terms-hash check. The terms-hash refusal itself is covered by `rob7_ratify_altered_terms` in `cargo test` and by the sim.
 ² The script sent this one as a direct transaction from mallory's account, which only holds 0.1 NEAR, so the client refused it for insufficient balance. That's a script bug, not an on-chain refusal. The owner-only check is covered by `rob8_outsider_cannot_admin` in `cargo test`. Next run: send it as a meta-transaction.
 
+### Real NEAR AI Cloud judges on testnet, 2026-11-13: dispute #1
+
+Three models hosted by NEAR AI Cloud inside TEEs (Intel TDX + NVIDIA confidential GPUs) judged a real dispute. Each model's TEE signed `model:sha256(request):sha256(response)`, and the contract recovered every signature on-chain with `ecrecover` and matched it to the judge's **attested** `signing_address`.
+
+| Judge | Model | Attested TEE signer | Verdict (its own words, shortened) |
+|---|---|---|---|
+| 3 | `deepseek-ai/DeepSeek-V4.1-Flash-1017` | `0xfe0071895500a9755c18044948ab4f4e1a7f337e` | CRITICAL_BREACH: "~71% availability vs the 99% covenant floor… a clear, verified breach" |
+| 4 | `Qwen/Qwen3.8-27B` | `0x835ab53d20294ef795906dff21ae4c045336aa26` | CRITICAL_BREACH: "Observed uptime ~70.8% vs 99% covenant… severe" |
+| 5 | `z-ai/glm-5.3-flash` | `0x3b753b4406613c5e70ae640508632b600424fa0c` | CRITICAL_BREACH: "a material breach, not bad faith" |
+
+| Step | Proves | Tx |
+|---|---|---|
+| Register TEE judges 3, 4, 5 | attested signing addresses + sha256 of each attestation report on-chain | [A4EWzJ2x…](https://testnet.nearblocks.io/txns/A4EWzJ2x89CaSSjxnxMJK7swH352FDqeYACe9arT8qfa) · [D97u8kMv…](https://testnet.nearblocks.io/txns/D97u8kMvv4sE1jLcbnF4qMeRczNcvAncynMZeJddeo57) · [3aiSdvFt…](https://testnet.nearblocks.io/txns/3aiSdvFtJYKQaHiQo8ViWtjjxFjy3jMbsozyGmzuJWeG) |
+| Deactivate simulated judges 0–2 | from here on only TEE-attested keys can reach quorum | [7ypT4CbG…](https://testnet.nearblocks.io/txns/7ypT4CbG9LQSTYHZ2FGQhmnx4nVYi3iP5aouyV9hEKhc) · [5pGt7ko5…](https://testnet.nearblocks.io/txns/5pGt7ko5XbpbXnPCfkdXgwD3RqHRrcrWpJBXyidRET9C) · [7EVAvxZ2…](https://testnet.nearblocks.io/txns/7EVAvxZ21zDPri3soQ3mJPbxtXE1zFz6C5k1RVVanHn7) |
+| Treaty #1 propose / ratify (meta-tx) | 0.1 + 0.1 NEAR escrowed | [DT3x6r9H…](https://testnet.nearblocks.io/txns/DT3x6r9Hjo7qQP94mJHf7fYsweA7EYXh63M9aqfeLHwK) · [5HWUpDPg…](https://testnet.nearblocks.io/txns/5HWUpDPge7cEmqo8iFcXnowE2ZY1hr85vXnoHvuvJxwx) |
+| `file_dispute` #1 (meta-tx) | evidence sha256 committed | [2jiQyjsd…](https://testnet.nearblocks.io/txns/2jiQyjsdaPVPvn7j7cG2YmCfBEkzsm3876PEB3QxHn2U) |
+| **`submit_verdicts`** | 3/3 NEAR AI Cloud TEE signatures recovered on-chain → **CRITICAL_BREACH** (2840 bps); meridian's bond slashed | [**8FhCBXup…**](https://testnet.nearblocks.io/txns/8FhCBXupX4Y67QoybF3vsmQx95uPotEE9cP5iuBRx2BD) |
+
+Notes:
+- A model can be served by several TEE nodes, each with its own attested key. A second Qwen node (judge 6, `0x979121…3474`) was registered with its own attestation report ([7rsQzhfe…](https://testnet.nearblocks.io/txns/7rsQzhfeLTjPZmKNGcmAeXd6s2yvM6AMRuvUMychJiL3)) but did not vote. The script now registers a node only after an attestation report names exactly the key that signed a vote. A follow-up should group a model's node keys under one judge, so a model can never fill two quorum seats.
+- The first attempt hit a NEAR AI Cloud timeout after filing the dispute. The rerun resumed the open dispute with byte-identical evidence (its hash matches the on-chain commitment), so the 10 transactions above came from that first attempt.
+- **Attestation reports:** every fetch uses a fresh nonce, so each report is different bytes. On-chain `attestation_sha256` commits to the report fetched at registration. For judge 6 that exact report is saved (`Qwen_Qwen3.8-27B-979121f4.json`, sha256 matches). For judges 3–5 the registration-time reports were overwritten by a later fetch (a script bug, now fixed). The saved reports for them are fresh ones that attest the **same signing keys** registered on-chain.
+- The evidence and telemetry were served from local hosts. Their bytes are in [telemetry/](telemetry/), and their sha256 matches the on-chain commitment.
+
 This table is updated after every live run.
 
 ---
@@ -114,7 +138,8 @@ Keys live only in `.env`, which is git-ignored. Agents only ever hold function-c
 - **Real and tested:** the contract (24 tests); on-chain `ecrecover` of TEE-format signatures; quorum, clamp and settlement; enclave sub-account creation with function-call keys; the escrow ledger and the solvency `audit()` view; the Chain Signatures `sign` request; the evidence hash and feed checks; and the TS ↔ Rust signature compatibility.
 - **Simulated in `npm run sim`:** the judges (local keys, scripted reasoning); the ledger (a TypeScript mirror of the contract with the same refusal strings); and the runtime refusals for function-call keys (R-ROB-2/3). These become real on-chain refusals in `npm run testnet`.
 - **Real on testnet (2026-11-13):** deployment, enclave sub-accounts, meta-tx treaty, 9 on-chain refusals with tx hashes, on-chain ruling, and an MPC signature from Chain Signatures (see Live evidence).
-- **Not yet done:** live NEAR AI Cloud judges (needs an API key), a mainnet Intents deposit (needs a yes per transaction), and building and broadcasting the destination-chain transaction after the MPC signs (the payload is currently a hash of the canonical payout).
+- **Real NEAR AI Cloud judges** decided dispute #1 on testnet (see above).
+- **Not yet done:** a mainnet Intents deposit (needs a yes per transaction), and building and broadcasting the destination-chain transaction after the MPC signs (the payload is currently a hash of the canonical payout).
 
 ## Baseline, libraries, disclosure (Q-002 / Q-005)
 

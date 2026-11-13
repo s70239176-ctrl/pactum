@@ -14,7 +14,9 @@
     "status": "node src/status.ts",
     "setup": "node src/setup.ts",
     "testnet": "node src/testnet.ts",
-    "fixture": "node src/fixture.ts"
+    "fixture": "node src/fixture.ts",
+    "nearai:check": "node src/nearai-check.ts",
+    "testnet:judges": "node src/testnet-judges.ts"
   },
   "dependencies": {
     "@noble/curves": "2.4.0",

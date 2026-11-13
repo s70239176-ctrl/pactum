@@ -132,14 +132,26 @@
       view("list_enclaves", { from: 0, limit: 200 }), view("list_treaties", { from: 0, limit: 500 }), view("list_disputes", { from: 0, limit: 500 }),
       view("list_judges"), view("list_payouts", { from: 0, limit: 500 }), view("audit"),
     ]);
-    let ev = null;
-    try { const e = await (await fetch("data/testnet-evidence.json")).json(); if (e.contract === S.contract) ev = e; } catch { /* optional */ }
+    // Recorded runs (real tx hashes), used only when they belong to this contract.
+    const runs = [];
+    for (const f of ["data/testnet-evidence.json", "data/testnet-real-judges.json"]) {
+      try { const e = await (await fetch(f)).json(); if (e.contract === S.contract) runs.push(e); } catch { /* optional */ }
+    }
+    const ev = runs[0] || null;
+    const items = runs.flatMap((r) => r.items);
     const tx = {};
-    const items = ev?.items || [];
-    items.forEach((i) => i.hash && (tx[i.step] = i.hash));
-    const voteItem = items.find((i) => i.votes);
+    // Per-dispute / per-treaty tx references: each run's file_dispute / submit_verdicts belong to the dispute it resolved.
+    const dtx = {}, ttx = {};
+    runs.forEach((r, ri) => {
+      const h = (s) => r.items.find((i) => i.step === s)?.hash;
+      const fd = r.items.find((i) => i.step === "final dispute")?.dispute;
+      const did = fd ? fd.id : ri === 0 ? 0 : null, tid = fd ? fd.treaty_id : ri === 0 ? 0 : null;
+      if (did != null) dtx[did] = { file: h("file_dispute (meta-tx)"), verdict: h("submit_verdicts"), sign: h("Chain Signatures sign()") };
+      if (tid != null) ttx[tid] = { propose: h("propose_treaty (meta-tx)"), ratify: h("ratify (meta-tx)") };
+      r.items.forEach((i) => i.hash && !(i.step in tx) && (tx[i.step] = i.hash));
+    });
     const liveVotes = {};
-    (voteItem?.votes || []).forEach((v) => {
+    items.filter((i) => i.votes).flatMap((i) => i.votes).forEach((v) => {
       try {
         const id = Number((v.request_body.match(/pactum:v1\|[^|]+\|(\d+)\|/) || [])[1]);
         const c = JSON.parse(v.response_body).choices[0].message.content;
@@ -154,14 +166,14 @@
     const payouts = pay.map((p) => ({ id: p.id, dispute_id: p.dispute_id, to: p.beneficiary_enclave, target: p.target, amount: yocto(p.amount), status: p.status, path: p.path, mpc_signature: p.mpc_signature, dest_tx: p.dest_tx }));
     const refusals = items.filter((i) => /^R-ROB/.test(i.step)).map((i) => ({ rule: i.step.split(" ")[0], attack: i.step.replace(/^R-ROB-\S+ /, ""), message: refusalMsg(i.error), proves: i.proves, tx: i.hash || null, onchain: !!i.hash }));
     const events = [];
-    if (ev) {
+    if (runs.length) {
       items.filter((i) => i.hash || i.votes).forEach((i, k) => events.push({ seq: k, type: liveType(i.step), actor: liveActor(i.step), text: i.proves ? `${i.step}: ${i.proves}` : i.step, status: i.ok ? "ok" : "refused", tx: i.hash || null, detail: i.error ? refusalMsg(i.error) : null }));
     } else {
       enclaves.forEach((e) => events.push({ seq: 0, type: "Enclave registered", actor: e.name, text: `Enclave ${e.account}`, status: "ok", tx: null, date: e.created }));
       treaties.forEach((t) => events.push({ seq: 1, type: "Treaty activated", actor: short(t.a), text: `Treaty #${t.id} ${short(t.a)} ↔ ${short(t.b)} (${t.status})`, status: t.status, tx: null, date: t.activated || t.created }));
       disputes.forEach((d) => { events.push({ seq: 2, type: "Dispute filed", actor: short(d.plaintiff), text: `Dispute #${d.id}: ${d.allegation}`, status: d.status, tx: null, date: d.filed }); if (d.verdict) events.push({ seq: 3, type: "Ruling verified", actor: "tribunal", text: `Ruling #${d.id}: ${d.verdict}`, status: "ok", tx: null }); });
     }
-    return { mode: "live", source: `testnet · ${S.contract}`, contract: S.contract, evidence: ev, enclaves, treaties, disputes, judges, payouts, audit: { liabilities: yocto(audit.liabilities), solvent: audit.solvent, balance: yocto(audit.balance) }, refusals, events, tx };
+    return { mode: "live", source: `testnet · ${S.contract}`, contract: S.contract, evidence: ev, enclaves, treaties, disputes, judges, payouts, audit: { liabilities: yocto(audit.liabilities), solvent: audit.solvent, balance: yocto(audit.balance) }, refusals, events, tx, dtx, ttx };
   }
   const refusalMsg = (err) => {
     if (!err) return "";
@@ -169,7 +181,7 @@
     const k = String(err).match(/DelegateActionAccessKeyError":(\{"([A-Za-z]+)"|"([A-Za-z]+)")/); if (k) return `runtime: ${k[2] || k[3]}`;
     return String(err).slice(0, 140);
   };
-  const liveType = (s) => /^R-ROB/.test(s) ? "Attack rejected" : /register judge/.test(s) ? "Judge registered" : /register enclave/.test(s) ? "Enclave registered" : /propose_treaty/.test(s) ? "Treaty proposed"
+  const liveType = (s) => /^R-ROB/.test(s) ? "Attack rejected" : /register (TEE )?(judge|node)/.test(s) ? "Judge registered" : /deactivate/.test(s) ? "Judge deactivated" : /register enclave/.test(s) ? "Enclave registered" : /propose_treaty/.test(s) ? "Treaty proposed"
     : /ratify/.test(s) ? "Treaty activated" : /file_dispute/.test(s) ? "Dispute filed" : /judge votes/.test(s) ? "Judge evaluation" : /submit_verdicts/.test(s) ? "Ruling verified" : /Chain Signatures/.test(s) ? "Chain Signatures" : "Protocol";
   const liveActor = (s) => (s.match(/(atlas|meridian|mallory)/) || [])[1] || (/(propose|file_dispute)/.test(s) ? "atlas" : /ratify/.test(s) ? "meridian" : /verdict|judge/.test(s) ? "tribunal" : "owner");
 
@@ -268,21 +280,21 @@
           ${t.telemetry?.length ? `<dt>Telemetry</dt><dd class="mono">${t.telemetry.map(esc).join("<br>")}</dd>` : ""}
         </dl>
       </div>
-      ${S.mode === "live" && (tx["propose_treaty (meta-tx)"] || tx["ratify (meta-tx)"]) && t.id === 0 ? `<div class="block"><h4 class="label">Transaction references</h4><dl class="kv"><dt>Proposed (meta-tx)</dt><dd>${txLink(tx["propose_treaty (meta-tx)"])}</dd><dt>Ratified (meta-tx)</dt><dd>${txLink(tx["ratify (meta-tx)"])}</dd></dl></div>` : ""}
+      ${S.mode === "live" && M().ttx?.[t.id] ? `<div class="block"><h4 class="label">Transaction references</h4><dl class="kv"><dt>Proposed (meta-tx)</dt><dd>${txLink(M().ttx[t.id].propose)}</dd><dt>Ratified (meta-tx)</dt><dd>${txLink(M().ttx[t.id].ratify)}</dd></dl></div>` : ""}
       <div class="block"><h4 class="label">Disputes (${ds.length})</h4>${ds.length ? ds.map((d) => `<div class="ev" data-open="dispute:${d.id}" style="grid-template-columns:auto minmax(0,1fr) auto;padding:10px 0"><span class="mono">#${d.id}</span><span>${esc(short(d.plaintiff))} vs ${esc(short(d.defendant))}</span>${verdictChip(d.verdict)}</div>`).join("") : `<p class="dim">No disputes filed.</p>`}</div>`);
   }
 
   function stagesOf(d) {
-    const tx = M().tx, live = S.mode === "live";
+    const tx = (M().dtx || {})[d.id] || {}, live = S.mode === "live";
     const pay = M().payouts.filter((p) => p.dispute_id === d.id);
     const t = M().treaties.find((x) => x.id === d.treaty_id);
     return [
-      { done: true, t: "Dispute submitted", s: `Filed by ${short(d.plaintiff)} against ${short(d.defendant)}${d.filed ? ` · ${fmtDate(d.filed)}` : ""}`, tx: live && tx["file_dispute (meta-tx)"] },
+      { done: true, t: "Dispute submitted", s: `Filed by ${short(d.plaintiff)} against ${short(d.defendant)}${d.filed ? ` · ${fmtDate(d.filed)}` : ""}`, tx: live && tx.file },
       { done: !!d.evidence_sha256, t: "Evidence committed", s: d.evidence_sha256 ? `sha256 ${shortHash(d.evidence_sha256, 16)}: judges must fetch bytes that hash to this` : "No evidence hash on record" },
-      { done: d.votes.length > 0, t: "TEE judge evaluation", s: d.votes.length ? `${d.votes.length} signed votes recorded${d.votes.some((v) => v.mode === "simulation") ? " (simulated TEE keys)" : ""}` : "Individual votes are not stored on-chain for this dispute" },
+      { done: d.votes.length > 0, t: "TEE judge evaluation", s: d.votes.length ? `${d.votes.length} signed votes recorded${d.votes.some((v) => v.mode === "simulation") ? " (simulated TEE keys)" : d.votes.some((v) => v.mode === "near-ai-cloud") ? " · NEAR AI Cloud TEE signatures" : ""}` : "Individual votes are not stored on-chain for this dispute" },
       { done: !!d.verdict, t: "Decision generated", s: d.verdict ? `${d.raw}${d.raw !== d.verdict ? ` → clamped to ${d.verdict}` : ""} · metric ${d.metric_bps} bps` : "Awaiting quorum" },
-      { done: d.status === "Resolved", t: "Cryptographic verification", s: d.status === "Resolved" ? `Contract recovered ${d.judges.length} signer(s) with ecrecover and matched registered judge addresses (2-of-3 quorum)` : "Not yet verified", tx: live && d.status === "Resolved" && tx["submit_verdicts"] },
-      { done: pay.length > 0 || t?.status === "Closed", t: "On-chain enforcement", s: pay.length ? pay.map((p) => `${near(p.amount)} NEAR → ${p.target.chain} (${p.status})`).join("; ") : t?.status === "Closed" ? "Treaty closed, bonds released" : d.verdict ? "No transfer required for this verdict" : "Pending", tx: live && pay.some((p) => p.status === "Signed") && tx["Chain Signatures sign()"] },
+      { done: d.status === "Resolved", t: "Cryptographic verification", s: d.status === "Resolved" ? `Contract recovered ${d.judges.length} signer(s) with ecrecover and matched registered judge addresses (2-of-3 quorum)` : "Not yet verified", tx: live && d.status === "Resolved" && tx.verdict },
+      { done: pay.length > 0 || t?.status === "Closed", t: "On-chain enforcement", s: pay.length ? pay.map((p) => `${near(p.amount)} NEAR → ${p.target.chain} (${p.status})`).join("; ") : t?.status === "Closed" ? "Treaty closed, bonds released" : d.verdict ? "No transfer required for this verdict" : "Pending", tx: live && pay.some((p) => p.status === "Signed") && tx.sign },
     ];
   }
 
@@ -506,12 +518,12 @@
   function vTribunal() {
     const m = M();
     const open = m.disputes.filter((d) => d.status === "Open"), res = m.disputes.filter((d) => d.status === "Resolved");
-    const sim = m.judges.some((j) => j.simulated);
+    const sim = m.judges.some((j) => j.simulated && j.active !== false);
     return `<div class="tribunal">${pageHead("Digital constitutionalism", "PACTUM <span>TRIBUNAL</span>", "Cryptographic adjudication for sovereign agents.")}
       ${sim ? `<div class="notice">Judges on this ${m.mode === "live" ? "deployment" : "simulation"} sign with <b>simulated TEE keys</b> (model ids prefixed <span class="mono">sim/</span>). The wire format and on-chain verification are identical to NEAR AI Cloud; live models need an API key.</div>` : ""}
       <div class="metrics m4"><div class="metric"><div class="label">Pending disputes</div><div class="v">${open.length}</div></div><div class="metric"><div class="label">Resolved</div><div class="v">${res.length}</div></div><div class="metric"><div class="label">Registered judges</div><div class="v">${m.judges.filter((j) => j.active !== false).length}<small>/ ${m.judges.length}</small></div></div><div class="metric"><div class="label">Quorum</div><div class="v">2<small>of 3</small></div></div></div>
       <div class="grid g-main"><section class="panel gold"><header><h2>Ruling of record</h2>${m.disputes.length > 1 ? `<select class="input" id="dsel" aria-label="Choose dispute">${m.disputes.map((d) => `<option value="${d.id}">Dispute № ${d.id}</option>`).join("")}</select>` : ""}</header><div class="body" id="ruling">${m.disputes.length ? rulingDoc(m.disputes.at(-1)) : `<div class="empty">${I.empty}No disputes have been filed on this contract.</div>`}</div></section>
-        <div class="grid" style="align-content:start"><section class="panel gold"><header><h2>Judge panel</h2></header><div class="body grid">${m.judges.map((j) => `<div class="judge-card"><div style="display:flex;justify-content:space-between;gap:8px"><b>${esc(j.name)}</b>${j.active === false ? chip("neutral", "inactive") : chip("gold", j.simulated ? "simulated TEE" : "attested TEE", 1)}</div><div class="mono dim" style="margin-top:6px">${esc(j.model)}</div><dl class="kv" style="margin-top:8px;grid-template-columns:96px minmax(0,1fr);font-size:12px"><dt>Signer</dt><dd class="mono break">0x${esc(j.signing_address)}</dd><dt>Attestation</dt><dd class="mono break">${esc(shortHash(j.attestation_sha256, 16))}</dd></dl></div>`).join("") || `<div class="empty">No judges registered.</div>`}</div></section>
+        <div class="grid" style="align-content:start"><section class="panel gold"><header><h2>Judge panel</h2></header><div class="body grid">${[...m.judges].sort((x, y) => (y.active !== false) - (x.active !== false) || x.id - y.id).map((j) => `<div class="judge-card"><div style="display:flex;justify-content:space-between;gap:8px"><b>${esc(j.name)}</b>${j.active === false ? chip("neutral", "inactive") : chip("gold", j.simulated ? "simulated TEE" : "attested TEE", 1)}</div><div class="mono dim" style="margin-top:6px">${esc(j.model)}</div><dl class="kv" style="margin-top:8px;grid-template-columns:96px minmax(0,1fr);font-size:12px"><dt>Signer</dt><dd class="mono break">0x${esc(j.signing_address)}</dd><dt>Attestation</dt><dd class="mono break">${esc(shortHash(j.attestation_sha256, 16))}</dd></dl></div>`).join("") || `<div class="empty">No judges registered.</div>`}</div></section>
           <section class="panel"><header><h2>Docket</h2></header><div class="body flush">${m.disputes.map((d) => `<div class="ev" data-open="dispute:${d.id}" style="grid-template-columns:44px minmax(0,1fr) auto"><span class="t">№${d.id}</span><div>${esc(short(d.plaintiff))} v. ${esc(short(d.defendant))}<div class="mono mute">treaty #${d.treaty_id}</div></div>${d.status === "Open" ? chip("dispute", "open", 1) : verdictChip(d.verdict)}</div>`).join("") || `<div class="empty">Docket empty.</div>`}</div></section></div></div></div>`;
   }
 
