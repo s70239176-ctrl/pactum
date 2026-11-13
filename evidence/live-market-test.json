@@ -1,67 +1,66 @@
 {
-  "when": "2026-11-13T19:31:11.399Z",
+  "when": "2026-11-13T19:40:36.781Z",
   "contract": "pactum.stunner70.testnet",
   "target": "https://pactum-int.vercel.app",
   "items": [
     {
       "round": 0,
-      "treaty": 11,
+      "treaty": 20,
       "monitors": [
-        6578,
-        6558
+        6940,
+        7017
       ],
       "decision": "dispute",
-      "dispute": 6,
-      "propose": "5T3ihKkHSA1e2VfBRm8HvVrdKZRYvXarJsHypDXxGgVh",
-      "ratify": "3dezGQBDYgPDnGuPS2h8iynjFz334Mogw6pgBzSrFZDy",
-      "file_dispute": "CTuqmkESx4U5QADQ1YskowpfaCZBQcquaF11HxjL9ysH",
-      "submit_verdicts": "CdyvnvptjQS8Pz1XGpzJgybXR3dwq4DWzk2WEJH6ncXU",
-      "verdict": null,
-      "raw": null,
-      "judges": [],
+      "dispute": 10,
+      "propose": "4YTNmuDA3RmXWCEt9ZbKnzx42fxjzG346ajBHzHsSyPn",
+      "ratify": "6M3ZuwUhYJ2fkc5g64zRHovt3x93yzxQU1qBaPa9kzSg",
+      "file_dispute": "2ke4v94Db2DtBDQ2hpmqjDRbciGeDhCR5bZNJciYbpV6",
+      "submit_verdicts": "62LWKWbSxaJNPtVvbP4zqfvcjBZrBVX3cYAmw2MkQ8rc",
+      "verdict": "CriticalBreach",
+      "raw": "CriticalBreach",
+      "judges": [
+        3,
+        4,
+        5
+      ],
       "votes": [
         {
           "model": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
           "verdict": "CRITICAL_BREACH",
-          "metric_bps": 3366,
+          "metric_bps": 2951,
           "signer": "fe0071895500a9755c18044948ab4f4e1a7f337e",
           "judge_id": 3
         },
         {
-          "error": "fetch failed"
+          "model": "Qwen/Qwen3.8-27B",
+          "verdict": "CRITICAL_BREACH",
+          "metric_bps": 2951,
+          "signer": "835ab53d20294ef795906dff21ae4c045336aa26",
+          "judge_id": 4
         },
         {
-          "error": "fetch failed"
+          "model": "z-ai/glm-5.3-flash",
+          "verdict": "CRITICAL_BREACH",
+          "metric_bps": 2951,
+          "signer": "3b753b4406613c5e70ae640508632b600424fa0c",
+          "judge_id": 5
         }
       ],
-      "expected": false
+      "expected": true
     },
     {
       "round": 1,
-      "treaty": 12,
+      "treaty": 21,
       "monitors": [
-        6645,
-        6672
-      ],
-      "decision": "accept",
-      "propose": "5AC7urrHPLvp1P4h66V3167SVRd5kMk9uibCucE3SPvz",
-      "ratify": "7ov43usMnyVBZj7g5DQL6haDrJorwzcv1bByHJJ7keNT",
-      "request_exit": "DHhdEdN5V8FgPrMjrCnaPQzAEG5CqByG6MpzSM8MMVCY",
-      "execute_exit": "5GKFYFSQespVPq6UswjxNU11vXKPnQ8LHR1PBYNPHC8R"
-    },
-    {
-      "round": 2,
-      "treaty": 13,
-      "monitors": [
-        9949,
-        9944
+        9928,
+        9917
       ],
       "decision": "dispute",
-      "dispute": 7,
-      "propose": "BD7bBvv4CqaqRDBKoXjo7xV3W1LULXdGQcRX6X9PTFtQ",
-      "ratify": "4cLXKBr5eUkEXkn64umvDw9pobtivPn9LLvZADFvve9X",
-      "file_dispute": "Gt37uu9f7SEuJzo9wGFRPWz6jT6tG7YwUbjdP8h8qY6c",
-      "submit_verdicts": "38761DhtP9Xvud52sKvL3nAVwLri1jEDQdouHqWS8EZs",
+      "dispute": 11,
+      "propose": "CeGNeKewgmKVX6cwxPprYSwxZ6qnta5a9QubSLQRoS33",
+      "ratify": "Hxnr8mPGL63fc5oz3oMtBoA3cE7HyAPRhQAvjJC8ZpKc",
+      "file_dispute": "HiZz41NyzLwPy6qWRWE559apeqBeNHrQEdiCJFCJfZPG",
+      "submit_verdicts": "HNtnXCZiwJKQPacraUTzKCKw5XJ2baXGLZbNkrMrQ1VR",
       "verdict": "MaliciousReport",
       "raw": "MaliciousReport",
       "judges": [

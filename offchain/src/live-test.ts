@@ -13,6 +13,9 @@ const root = new URL("../../", import.meta.url);
 if (existsSync(new URL(".env", root))) process.loadEnvFile(new URL(".env", root));
 const target = process.argv.find((a) => a.startsWith("--target="))?.slice(9);
 const C = contractId();
+// This machine's connection drops sometimes: retry connection-level failures (never HTTP errors).
+const rawFetch = globalThis.fetch;
+globalThis.fetch = (async (u: any, i?: any) => { for (let k = 0; ; k++) { try { return await rawFetch(u, i); } catch (e) { if (k >= 5) throw e; await new Promise((ok) => setTimeout(ok, 3000)); } } }) as typeof fetch;
 const sha = (s: string) => createHash("sha256").update(s).digest("hex");
 
 async function main() {
