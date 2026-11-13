@@ -1,5 +1,7 @@
 # Pactum Protocol
 
+[![Pactum Protocol: treaties AI agents can't break](docs/screenshots/landing.png)](https://pactum-int.vercel.app)
+
 **Pactum is the on-chain diplomatic layer for autonomous AI agents.** Every agent is a sovereign enclave that locks real collateral and writes natural-language treaties. When a treaty is breached, verifiable multi-model reasoning decides the outcome, and everything settles through NEAR Intents, Chain Signatures and NEAR AI Cloud TEEs.
 
 Built for **NEAR HACKATHON: Build Beyond Boundaries** (2026-11-01 → 2026-11-14).
@@ -23,6 +25,15 @@ Design: [ARCHITECTURE.md](ARCHITECTURE.md) · Rules the code enforces: [RULES.md
 | C | Open **Tribunal** | The three real model votes, each judge's attested TEE signer, and every adjudication stage linked to its transaction |
 | A++ | Open **Bonded Markets** (`#/markets`) → **Hire an agent** (needs a testnet wallet and the same enclave as A+) | A **live** market round with real transactions and real TEE judges. Your enclave hires `house.pactum.stunner70.testnet`, a provider agent holding only a function-call key; both sides lock bonds on-chain. The provider either delivers or quietly breaches (hidden from you) and always self-reports success. Check the two independent monitors, then **accept** (both bonds back) or **dispute**: three NEAR AI Cloud models rule inside TEEs (about 5–40 s), the contract `ecrecover`s their signatures, and the loser pays: a real breach pays you the provider's bond (S-1), a false accusation forfeits your stake (S-4). Every step links to its transaction |
 | D | Open **Bonded Markets** (`#/markets`) and **play a market** | You are the vault. Award a price-feed contract to one of three bonded oracles (their reliability is hidden), then challenge or accept each of 6 epochs from two monitor readings. Each challenge is settled live by the contract's rules: slash (S-1/S-2), forfeit (S-4), fee (S-3) or refund (S-5). Your P&L and the providers' trust update as you play (**playable simulation in the browser, no transactions**). Below it: three scored rounds, a leaderboard, and the Oracle Tender's real testnet counterpart |
+
+### What the judges see
+
+| | |
+|---|---|
+| [![Verify: every recorded attack replayed live from testnet and refused](docs/screenshots/verify.png)](https://pactum-int.vercel.app/#/verify) | [![Tribunal: a live dispute ruled CRITICAL BREACH by three attested TEE judges](docs/screenshots/tribunal.png)](https://pactum-int.vercel.app/#/tribunal) |
+| **Verify.** Each recorded attack is fetched live from NEAR testnet and shown refused, with the chain's own reason and its nearblocks link. | **Tribunal.** A live Hire-an-agent dispute: three NEAR AI Cloud models in TEEs, each signer's attested key, the ruling recovered on-chain. |
+| [![Hire an agent: a live bonded market with your own testnet wallet](docs/screenshots/markets-hire.png)](https://pactum-int.vercel.app/#/markets) | [![Command centre: live enclaves, escrow, rulings and solvency](docs/screenshots/command.png)](https://pactum-int.vercel.app/#/command) |
+| **Hire an agent.** Hire a bonded provider with your own wallet, catch it breaching, and watch the TEE judges slash it on-chain. | **Command centre.** Live contract state: enclaves, escrow, 12 rulings on record, and the solvency `audit()` view. |
 
 ### Full: on the command line
 
