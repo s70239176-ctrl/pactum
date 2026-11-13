@@ -1,0 +1,105 @@
+{
+  "when": "2026-11-13T18:52:32.298Z",
+  "contract": "pactum.stunner70.testnet",
+  "target": "local",
+  "items": [
+    {
+      "round": 0,
+      "treaty": 8,
+      "monitors": [
+        7180,
+        7178
+      ],
+      "decision": "dispute",
+      "dispute": 4,
+      "propose": "AQKwrfVdEWSPW5pebfVcb4NTEUxZkciGu8KmWXrwTe38",
+      "ratify": "H1mZ2rdBcBu46SNHrDJGxwajia9gUMVfPY4YaXk5UfA",
+      "file_dispute": "4eMiwWxjawmBmHx3ML3TN2RPLtqJFJduZrGumUNTr4rg",
+      "submit_verdicts": "DyGn3i7gYh5aMQWjG2d9WaCy51TqBrEwjfurx4VAApGy",
+      "verdict": "CriticalBreach",
+      "raw": "CriticalBreach",
+      "judges": [
+        3,
+        4,
+        5
+      ],
+      "votes": [
+        {
+          "model": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
+          "verdict": "CRITICAL_BREACH",
+          "metric_bps": 2748,
+          "signer": "fe0071895500a9755c18044948ab4f4e1a7f337e",
+          "judge_id": 3
+        },
+        {
+          "model": "Qwen/Qwen3.8-27B",
+          "verdict": "CRITICAL_BREACH",
+          "metric_bps": 2748,
+          "signer": "835ab53d20294ef795906dff21ae4c045336aa26",
+          "judge_id": 4
+        },
+        {
+          "model": "z-ai/glm-5.3-flash",
+          "verdict": "CRITICAL_BREACH",
+          "metric_bps": 2748,
+          "signer": "3b753b4406613c5e70ae640508632b600424fa0c",
+          "judge_id": 5
+        }
+      ],
+      "expected": true
+    },
+    {
+      "round": 1,
+      "treaty": 9,
+      "monitors": [
+        6725,
+        6680
+      ],
+      "decision": "accept",
+      "propose": "EVU4YNyGssHZK7SM57GSCHtc1xTHQofkscwU6fymiYdy",
+      "ratify": "ih67cBSaQSXKQHtULBGEHLEQPBhZaayLLZJ2yPdRoUN",
+      "request_exit": "FHtgthdNp6y7BuKiXKDZbFuUqyjH6Fr9yZTgTuysRSdX",
+      "execute_exit": "AYeui3KZAQxRqQJZxuHVUEnbZmijoTf3DqNjhWiZ9nrr"
+    },
+    {
+      "round": 2,
+      "treaty": 10,
+      "monitors": [
+        9932,
+        9926
+      ],
+      "decision": "dispute",
+      "dispute": 5,
+      "propose": "G49rwRrij993fhG67mhPTMTzL9GSKKmzqoV4X5RQ7pQ5",
+      "ratify": "D4nqsRGkxWHXJA8KgMYCgrKQy5msFkKzyTBAsvJaHJum",
+      "file_dispute": "DfjXo3nVHsoHLSZcV4r2LCX9HbWi46genpjyv6ZADepC",
+      "submit_verdicts": "AbjQYq6noGCU8fpGvSw7uHynKWzzijbcaAJvUUzz9Fwp",
+      "verdict": "MaliciousReport",
+      "raw": "MaliciousReport",
+      "judges": [
+        3,
+        4
+      ],
+      "votes": [
+        {
+          "model": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
+          "verdict": "MALICIOUS_REPORT",
+          "metric_bps": 0,
+          "signer": "fe0071895500a9755c18044948ab4f4e1a7f337e",
+          "judge_id": 3
+        },
+        {
+          "model": "Qwen/Qwen3.8-27B",
+          "verdict": "MALICIOUS_REPORT",
+          "metric_bps": 0,
+          "signer": "835ab53d20294ef795906dff21ae4c045336aa26",
+          "judge_id": 4
+        },
+        {
+          "error": "vote: fetch failed"
+        }
+      ],
+      "expected": true
+    }
+  ]
+}

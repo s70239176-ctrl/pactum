@@ -1,0 +1,10 @@
+{
+  "name": "pactum-site",
+  "private": true,
+  "type": "module",
+  "description": "Static site (frontend/) + the live market API (api/) on Vercel",
+  "engines": { "node": ">=20" },
+  "dependencies": {
+    "near-api-js": "7.4.0"
+  }
+}

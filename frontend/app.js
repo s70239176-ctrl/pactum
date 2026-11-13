@@ -763,7 +763,8 @@
       const r = await acct.signAndSendTransaction({ receiverId: C, actions: [naj.actions.functionCall(method, args, naj.teraToGas("20"), BigInt(depositYocto))], throwOnFailure: false });
       const hash = r.transaction?.hash || r.transaction_outcome?.id;
       const fail = r.receipts_outcome?.find((x) => x.outcome.status?.Failure) || (r.status?.Failure ? { outcome: { status: r.status } } : null);
-      return fail ? { kind: "refused", hash, f: failureText(fail.outcome.status.Failure) } : { kind: "ok", hash };
+      let value; try { if (r.status?.SuccessValue) value = JSON.parse(atob(r.status.SuccessValue)); } catch { /* non-JSON */ }
+      return fail ? { kind: "refused", hash, f: failureText(fail.outcome.status.Failure) } : { kind: "ok", hash, value };
     } catch (e) {
       // Rejected by the network before inclusion (e.g. function-call key permission): no tx hash exists.
       const m = String(e?.message || e);
@@ -835,6 +836,156 @@
     };
   }
 
+  // ---- "Hire an agent": the live market on testnet. You (your enclave) hire house.<contract>, a bonded
+  // provider run by api/market.js. It either delivers or quietly breaches (hidden from you); its
+  // self-report always claims success. Check the monitors, then accept or dispute. Real TEE judges rule.
+  const H = { offer: null, tid: null, did: null, report: null, mon: null, votes: [], err: null, busy: "", ruling: null, log: [] };
+  const hKey = () => `pactum.hire.${W.enclave}`;
+  const hSave = () => { try { localStorage.setItem(hKey(), JSON.stringify({ tid: H.tid, did: H.did })); } catch { /* storage blocked */ } };
+  function hLoad() { try { const v = JSON.parse(localStorage.getItem(hKey()) || "null"); if (v) { H.tid = v.tid; H.did = v.did; } } catch { /* storage blocked */ } }
+  async function api(op, body, q = "") {
+    const r = await fetch(`/api/market?op=${op}${q}`, body ? { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) } : {});
+    const j = await r.json().catch(() => ({ error: `HTTP ${r.status}` }));
+    if (!r.ok && !j.hash) throw new Error(j.error || `HTTP ${r.status}`);
+    return j;
+  }
+  async function cview(method, args) {
+    const r = await fetch(RPC, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "query", params: { request_type: "call_function", finality: "optimistic", account_id: H.offer?.contract || S.contract, method_name: method, args_base64: btoa(JSON.stringify(args)) } }) });
+    const j = await r.json(); return j.result ? JSON.parse(new TextDecoder().decode(new Uint8Array(j.result.result))) : null;
+  }
+  const hLog = (t, hash) => H.log.unshift({ t, hash });
+  const sha256 = async (s) => [...new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(s)))].map((b) => b.toString(16).padStart(2, "0")).join("");
+  const pct = (bps) => `${(bps / 100).toFixed(2)}%`;
+  const OUTCOME = {
+    CRITICAL_BREACH: "Critical breach (S-1): the provider's whole bond is paid to your wallet, your dispute bond returns, and the treaty closes, releasing your treaty bond.",
+    ELEVATED_RISK: "Elevated risk (S-2): 25% of the provider's bond is paid to your wallet and your dispute bond returns. The treaty stays in force.",
+    NORMAL: "No breach (S-3): 10% of your dispute bond goes to the treasury, the rest returns. The treaty stays in force.",
+    MALICIOUS_REPORT: "Malicious report (S-4): your whole dispute bond goes to the provider. The treaty stays in force.",
+    FEED_CONFLICT: "Feed conflict (S-5): full refund of your dispute bond, nothing slashed.",
+    NO_EVIDENCE: "No evidence (S-5): full refund of your dispute bond, nothing slashed.",
+  };
+  const WIRE = {"CriticalBreach":"CRITICAL_BREACH","ElevatedRisk":"ELEVATED_RISK","Normal":"NORMAL","MaliciousReport":"MALICIOUS_REPORT","FeedConflict":"FEED_CONFLICT","NoEvidence":"NO_EVIDENCE"};
+  const wireV = (v) => WIRE[v] || v;
+  async function hStep(label, fn) {
+    H.busy = label; H.err = null; hPaint();
+    try { await fn(); } catch (e) { H.err = String(e?.message || e); }
+    H.busy = ""; hPaint();
+  }
+  const enc = (r, what) => { if (r.kind !== "ok") throw new Error(`${what}: ${r.f?.msg || r.msg || r.kind}`); return r; };
+  async function hHire() {
+    const o = H.offer;
+    const r = enc(await asEnclave("propose_treaty", { counterparty: o.house, terms: o.terms, bond: o.bond, counter_bond: o.counter_bond, duration_ns: o.duration_ns, notice_ns: o.notice_ns, params: o.params, telemetry_urls: [] }), "propose_treaty");
+    H.tid = r.value; H.tstatus = "Proposed"; H.did = null; H.report = H.mon = H.ruling = null; H.votes = []; hSave();
+    hLog(`You proposed treaty #${H.tid} and locked your ${near(yocto(o.bond))} NEAR bond in escrow.`, r.hash);
+    H.busy = "The provider is reading your proposal on-chain…"; hPaint();
+    const k = await api("ratify", { treaty_id: H.tid });
+    if (!k.ok) throw new Error(`provider refused: ${k.error}`);
+    H.tstatus = "Active";
+    hLog(`${o.house} ratified the exact terms hash and locked its ${near(yocto(o.counter_bond))} NEAR bond. The treaty is in force.`, k.hash);
+    H.report = await api("report", null, `&t=${H.tid}`);
+    hLog(`${o.house} reports: delivered, ${pct(H.report.claimed_uptime_bps)} uptime.`);
+  }
+  async function hMonitors() {
+    const ev = JSON.parse(await (await fetch(`/api/market?op=evidence&t=${H.tid}`)).text());
+    const vals = await Promise.all(ev.feeds.map(async (u) => (await (await fetch(u)).json())[H.offer.house]));
+    H.mon = { urls: ev.feeds, vals: vals.map((v) => v.value_bps) };
+    hLog(`Monitors A and B (two different hosts) measured ${pct(H.mon.vals[0])} and ${pct(H.mon.vals[1])} against the ${pct(H.offer.floor_bps)} floor.`);
+  }
+  async function hAccept() {
+    const r = enc(await asEnclave("request_exit", { treaty_id: H.tid }), "request_exit");
+    hLog("You accepted the delivery (request_exit, 1 second notice).", r.hash);
+    await new Promise((ok) => setTimeout(ok, 2500));
+    const x = await api("exit", { treaty_id: H.tid });
+    if (!x.ok) throw new Error(`execute_exit: ${x.error}`);
+    hLog("execute_exit: both bonds released to free collateral. Treaty closed.", x.hash);
+    H.tid = null; hSave();
+  }
+  async function hDispute() {
+    const o = H.offer;
+    const doc = await (await fetch(`/api/market?op=evidence&t=${H.tid}`)).text();
+    const hash = await sha256(doc);
+    const uri = `${o.evidence_prefix}${H.tid}`;
+    const r = enc(await asEnclave("file_dispute", { treaty_id: H.tid, allegation: o.allegation, evidence_uri: uri, evidence_sha256: hash, dispute_bond: o.dispute_bond }), "file_dispute");
+    H.did = r.value; H.votes = []; hSave();
+    hLog(`You filed dispute #${H.did}: ${near(yocto(o.dispute_bond))} NEAR staked, evidence sha256 ${hash.slice(0, 12)}… committed on-chain.`, r.hash);
+    await hJudge();
+  }
+  async function hJudge() {
+    H.votes = H.offer.judges.map((j) => ({ ...j, state: "judging" })); hPaint();
+    await Promise.all(H.offer.judges.map(async (_, k) => {
+      try { const v = await api("vote", { dispute_id: H.did, judge: k }); H.votes[k] = { ...H.votes[k], ...v, state: "signed" }; }
+      catch (e) { H.votes[k] = { ...H.votes[k], state: "failed", error: String(e.message || e) }; }
+      hPaint();
+    }));
+    const good = H.votes.filter((v) => v.state === "signed");
+    if (good.length < 2) throw new Error("fewer than 2 judges answered; press “Retry judges”");
+    H.busy = "Relaying the signed votes; the contract recovers each signature…"; hPaint();
+    const s = await api("submit", { dispute_id: H.did, votes: good.map(({ judge_id, request_body, response_body, signature }) => ({ judge_id, request_body, response_body, signature })) });
+    if (!s.ok) throw new Error(`submit_verdicts refused: ${s.error}`);
+    H.ruling = { ...s.dispute, verdict: wireV(s.dispute.verdict), raw_verdict: wireV(s.dispute.raw_verdict) };
+    hLog(`Ruling: ${H.ruling.verdict} (metric ${s.dispute.metric_bps} bps), judges ${s.dispute.judges.join(", ")}. Settled on-chain.`, s.hash);
+    const t = await cview("get_treaty", { treaty_id: H.tid });
+    if (t?.status === "Closed") { H.tid = null; } H.did = null; hSave();
+  }
+  function hView() {
+    const o = H.offer;
+    if (!o) return `<div class="mute">Loading the offer…</div>`;
+    let body = "";
+    if (!W.account) body = `<p class="dim" style="margin-top:0">Connect a NEAR <b>testnet</b> wallet. You hire with your own enclave (0.6 testnet NEAR, created once; the same enclave as “Rob it yourself”).</p><button class="btn primary" data-h="connect">Connect testnet wallet</button>`;
+    else if (!W.enclave || !H.est?.active) body = `<p class="dim" style="margin-top:0">Connected as <b class="mono">${esc(W.account)}</b>. Create your enclave first: a sub-account with only a function-call key, 0.5 NEAR collateral.</p><button class="btn primary" data-h="create">Create my enclave (0.6 testnet NEAR)</button>`;
+    else {
+      const e = H.est;
+      body = `<div class="gstat"><div><span class="label">Your enclave</span><b class="mono" style="font-size:12px;word-break:break-all">${esc(W.enclave)}</b></div><div><span class="label">Free</span><b>${near(yocto(e.free))} NEAR</b></div><div><span class="label">Escrowed</span><b>${near(yocto(e.locked))} NEAR</b></div><div><span class="label">Payouts to</span><b class="mono" style="font-size:12px">${esc(W.account)}</b></div></div>`;
+      if (H.tid == null) body += `<p style="margin-top:0">Hire <b class="mono">${esc(o.house)}</b> to run a monitored data relay with a <b>${pct(o.floor_bps)}</b> uptime guarantee. You bond <b>${near(yocto(o.bond))}</b> NEAR, it bonds <b>${near(yocto(o.counter_bond))}</b> NEAR. It may deliver, or it may quietly breach and still report success.</p><button class="btn primary" data-h="hire">Hire the agent (sign with your enclave)</button>`;
+      else if (H.tstatus === "Proposed") body += `<p style="margin-top:0">Treaty #${H.tid} is proposed but the provider has not ratified it yet.</p><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn primary" data-h="ratify">Ask the provider again</button><button class="btn" data-h="cancel">Cancel (bond back)</button></div>`;
+      else if (H.did == null) {
+        body += `<div class="label">Treaty #${H.tid} is in force. The provider's report:</div><div class="mons"><div><span class="label">Self-reported uptime</span><b>${H.report ? pct(H.report.claimed_uptime_bps) : "…"}</b></div><div><span class="label">Monitor A</span><b style="color:${H.mon ? (H.mon.vals[0] < o.floor_bps ? "var(--dispute)" : "var(--ok)") : "inherit"}">${H.mon ? pct(H.mon.vals[0]) : "unchecked"}</b></div><div><span class="label">Monitor B</span><b style="color:${H.mon ? (H.mon.vals[1] < o.floor_bps ? "var(--dispute)" : "var(--ok)") : "inherit"}">${H.mon ? pct(H.mon.vals[1]) : "unchecked"}</b></div></div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">${H.mon ? "" : `<button class="btn" data-h="mon">Check the independent monitors</button>`}<button class="btn primary" data-h="dispute">Dispute (stake ${near(yocto(o.dispute_bond))} NEAR)</button><button class="btn" data-h="accept">Accept delivery (bonds back)</button></div>
+          <div class="mute" style="font-size:12px;margin-top:8px">A real breach pays you the provider's bond. A false accusation can cost you your stake (the judges decide). If you leave, this treaty is saved in this browser.</div>`;
+      } else body += `<div class="label">Dispute #${H.did} is open.</div><button class="btn primary" data-h="judge" style="margin-top:8px">Retry judges</button>`;
+    }
+    const votes = H.votes.length ? `<div class="grid g-3" style="margin-top:14px">${H.votes.map((v) => `<article class="panel"><div class="body"><div class="label">${esc(v.name)}</div><div class="mono mute" style="font-size:11px">${esc(v.model)}</div>
+      <div style="margin:8px 0">${v.state === "judging" ? `<span class="mute">judging in a TEE…</span>` : v.state === "failed" ? `<span style="color:var(--fail)">${esc(v.error)}</span>` : `${verdictChip(v.parsed?.verdict)} <span class="mono">${esc(v.parsed?.metric_bps ?? "")} bps</span>`}</div>
+      ${v.state === "signed" ? `<div class="dim" style="font-size:12.5px">${esc(String(v.parsed?.rationale || "").slice(0, 260))}</div><div class="mono mute" style="font-size:11px;margin-top:6px">signed by TEE key 0x${esc(v.signer.slice(0, 10))}… = on-chain judge #${v.judge_id}</div>` : ""}</div></article>`).join("")}</div>` : "";
+    const ruling = H.ruling ? `<div class="vres ok" style="margin-top:14px"><b>Ruling: ${esc(H.ruling.verdict)}</b> · ${esc(OUTCOME[H.ruling.verdict] || "")}${H.ruling.raw_verdict !== H.ruling.verdict ? ` <span class="mute">(raw ${esc(H.ruling.raw_verdict)}, clamped by the metric, D-7)</span>` : ""}${H.tid != null ? `<div style="margin-top:8px"><button class="btn" data-h="accept">Close the treaty (your bond back)</button></div>` : `<div style="margin-top:8px"><button class="btn" data-h="again">Hire again</button></div>`}</div>` : "";
+    const status = H.busy ? `<div class="vres warn" style="margin-top:12px">${esc(H.busy)}</div>` : H.err ? `<div class="vres bad" style="margin-top:12px">${esc(H.err)}</div>` : "";
+    const log = H.log.length ? `<div class="glog" style="margin-top:14px">${H.log.slice(0, 10).map((l) => `<div><div>${esc(l.t)} ${l.hash ? txLink(l.hash) : ""}</div></div>`).join("")}</div>` : "";
+    return body + status + votes + ruling + log;
+  }
+  async function hPaint() {
+    const el = $("#hire"); if (!el) return;
+    el.innerHTML = hView();
+    $$("[data-h]", el).forEach((b) => { b.disabled = !!H.busy; b.onclick = async () => {
+      const k = b.dataset.h;
+      if (k === "connect") return hStep("Waiting for your wallet…", async () => { await wConnect(); await hRefresh(); });
+      if (k === "create") return hStep("Waiting for your wallet…", async () => { const h = await wCreateEnclave(); for (let i = 0; i < 10 && !(await enclaveState())?.enclave?.active; i++) await new Promise((ok) => setTimeout(ok, 1500)); hLog("Enclave created.", h); await hRefresh(); });
+      if (k === "hire") return hStep("Proposing the treaty from your enclave…", async () => { await hHire(); await hRefresh(); });
+      if (k === "ratify") return hStep("The provider is reading your proposal on-chain…", async () => { const r = await api("ratify", { treaty_id: H.tid }); if (!r.ok) throw new Error(r.error); hLog("The provider ratified.", r.hash); H.report = null; await hRefresh(); });
+      if (k === "cancel") return hStep("Cancelling…", async () => { const r = enc(await asEnclave("cancel_proposal", { treaty_id: H.tid }), "cancel_proposal"); hLog("Proposal cancelled, bond released.", r.hash); H.tid = null; hSave(); await hRefresh(); });
+      if (k === "mon") return hStep("Fetching both monitors…", hMonitors);
+      if (k === "accept") return hStep("Closing the treaty…", async () => { await hAccept(); H.ruling = null; H.votes = []; await hRefresh(); });
+      if (k === "dispute") return hStep("Filing the dispute from your enclave…", async () => { await hDispute(); await hRefresh(); });
+      if (k === "judge") return hStep("Three TEE judges are ruling (30–90 s)…", async () => { await hJudge(); await hRefresh(); });
+      if (k === "again") { H.ruling = null; H.votes = []; H.report = H.mon = null; hPaint(); }
+    }; });
+  }
+  async function hRefresh() {
+    H.est = (await enclaveState())?.enclave || null;
+    if (W.enclave && H.tid == null && H.did == null) hLoad();
+    if (H.tid != null) {
+      const t = await cview("get_treaty", { treaty_id: H.tid });
+      if (!t || t.status === "Closed" || t.status === "Cancelled" || t.status === "Expired" || t.party_a !== W.enclave) { H.tid = null; H.did = null; H.tstatus = null; hSave(); }
+      else if (t.status === "Proposed") H.tstatus = "Proposed";
+      else { H.tstatus = t.status; if (t.open_dispute != null) H.did = t.open_dispute; if (!H.report && t.status !== "Proposed") H.report = await api("report", null, `&t=${H.tid}`).catch(() => null); }
+    }
+    hPaint();
+  }
+  async function hireMount() {
+    try { H.offer ||= await api("offer"); } catch (e) { const el = $("#hire"); if (el) el.innerHTML = `<div class="vres bad">The live market API is unavailable: ${esc(e.message)}</div>`; return; }
+    if (!W.account) await wTryRestore();
+    await hRefresh();
+  }
+
   const COPY = (cmd) => `<div class="cmd"><code>${esc(cmd)}</code><button class="btn ghost" data-copy="${esc(cmd)}" aria-label="Copy command">Copy</button></div>`;
   function vVerify() {
     const ruleIds = Object.keys(ATTACK);
@@ -898,6 +1049,7 @@
     const loop = ["Bid collateral", "Win the contract", "Deliver or defect", "Challenge", "TEE verdict", "Slash / payout / forfeit", "Reputation shift"];
     const real = MK.real;
     return pageHead("Agent economy", "BONDED MARKETS", "The same diplomatic layer runs competitive markets: agents win work by posting collateral and lose it when they fail to deliver.").replace(modeBadge(), `<span class="mode-badge demo">SIMULATION · SAME CONTRACT RULES</span>`) + `
+      <section class="panel" id="hire-panel" style="margin-bottom:var(--gap)"><header><h2>Hire an agent · catch a breach</h2><span class="mode-badge live">LIVE ON TESTNET · REAL TEE JUDGES</span></header><div class="body"><p class="dim" style="margin:0 0 14px">A real bonded market with your own wallet. You hire a provider agent; both sides lock bonds in escrow on-chain. It either delivers or quietly breaches while reporting success. Check the evidence, then accept or dispute: three NEAR AI Cloud models judge inside TEEs, the contract verifies their signatures, and the loser is slashed. Every step is a testnet transaction.</p><div id="hire"></div></div></section>
       <section class="panel game-panel" style="margin-bottom:var(--gap)"><header><h2>Play a market · you are the vault</h2><span class="mode-badge demo">PLAYABLE SIMULATION · IN YOUR BROWSER</span></header><div class="body"><p class="dim" style="margin:0 0 14px">Award a price-feed contract to one of three bonded oracles, then judge each epoch from two independent monitors. Every challenge is settled by the same rules the contract enforces (RULES S-1 to S-5, the D-7 clamp, the dual-feed check). No wallet, no transactions.</p><div id="game"></div></div></section>
       <section class="panel" style="margin-bottom:var(--gap)"><header><h2>The loop · read this in 60 seconds</h2></header><div class="body">
         <div class="loop">${loop.map((s, i) => `<div><span class="mono">0${i + 1}</span>${esc(s)}</div>`).join("")}</div>
@@ -1040,6 +1192,7 @@
     $("#main").innerHTML = vMarkets();
     if (!G.s) gNew();
     gPaint();
+    hireMount();
   }
 
   // ---------------------------------------------------------------- router
