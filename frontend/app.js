@@ -751,15 +751,15 @@
     const C = V.ev?.contract || S.contract;
     const acct = new naj.Account(W.enclave, new naj.JsonRpcProvider({ url: RPC }), naj.KeyPairSigner.fromSecretKey(W.sk));
     try {
-      const r = await acct.signAndSendTransaction({ receiverId: C, actions: [naj.actions.functionCall(method, args, naj.teraToGas("60"), BigInt(depositYocto))], throwOnFailure: false });
+      const r = await acct.signAndSendTransaction({ receiverId: C, actions: [naj.actions.functionCall(method, args, naj.teraToGas("20"), BigInt(depositYocto))], throwOnFailure: false });
       const hash = r.transaction?.hash || r.transaction_outcome?.id;
       const fail = r.receipts_outcome?.find((x) => x.outcome.status?.Failure) || (r.status?.Failure ? { outcome: { status: r.status } } : null);
       return fail ? { kind: "refused", hash, f: failureText(fail.outcome.status.Failure) } : { kind: "ok", hash };
     } catch (e) {
       // Rejected by the network before inclusion (e.g. function-call key permission): no tx hash exists.
       const m = String(e?.message || e);
-      const k = m.match(/MethodNameMismatch|DepositWithFunctionCall|NotEnoughAllowance|ReceiverMismatch/)?.[0];
-      return { kind: k ? "rejected" : "error", msg: k ? `${k}: ${m.slice(0, 160)}` : m.slice(0, 220) };
+      const k = /does not allow method|MethodNameMismatch/.test(m) ? "MethodNameMismatch" : /Deposit is not allowed with function call|DepositWithFunctionCall/.test(m) ? "DepositWithFunctionCall" : /allowance|ReceiverMismatch/i.test(m) ? "key permission" : null;
+      return { kind: k ? "rejected" : "error", hash: e?.txHash, msg: k ? `${k}: ${m.slice(0, 160)}` : m.slice(0, 220) };
     }
   }
   const LIVE = [
@@ -769,7 +769,7 @@
       return [{ label: "propose_treaty (bond 0.15 → escrow)", ...lock }, { label: "withdraw_free_collateral 0.5", ...steal }];
     } },
     { id: "R-ROB-2", t: "Use the agent key to call the admin method set_quorum", run: async () => [{ label: "set_quorum(1)", ...(await asEnclave("set_quorum", { quorum: 1 })) }] },
-    { id: "R-ROB-3", t: "Use the agent key to move 0.1 NEAR", run: async () => [{ label: "deposit_collateral with 0.1 NEAR attached", ...(await asEnclave("deposit_collateral", { enclave: W.enclave }, yoctoOf(0.1))) }] },
+    { id: "R-ROB-3", t: "Use the agent key to move NEAR (even 1 yoctoNEAR)", run: async () => [{ label: "deposit_collateral with 1 yoctoNEAR attached", ...(await asEnclave("deposit_collateral", { enclave: W.enclave }, "1")) }] },
     { id: "R-ROB-4", t: "Open a dispute on atlas ↔ meridian (a treaty you're not in)", run: async () => [{ label: "file_dispute on treaty #1", ...(await asEnclave("file_dispute", { treaty_id: 1, allegation: "I am not a party.", evidence_uri: "https://example.com/x", evidence_sha256: "a".repeat(64), dispute_bond: yoctoOf(0.1) })) }] },
     { id: "R-ROB-10", t: "Bond 0.3 NEAR, above your enclave's own 0.2 NEAR cap", run: async () => [{ label: "propose_treaty bond 0.3", ...(await asEnclave("propose_treaty", { counterparty: `atlas.${V.ev.contract}`, terms: "Judge test: over-cap bond.", bond: yoctoOf(0.3), counter_bond: yoctoOf(0.1), duration_ns: String(86_400e9), notice_ns: "1000" })) }] },
   ];
@@ -792,7 +792,7 @@
     } else {
       html += `<div class="gstat" style="margin-top:12px"><div><span class="label">Your enclave</span><b class="mono" style="font-size:12.5px;word-break:break-all">${esc(W.enclave)}</b></div><div><span class="label">Free</span><b>${near(yocto(e.free))} NEAR</b></div><div><span class="label">Escrowed</span><b>${near(yocto(e.locked))} NEAR</b></div><div><span class="label">Bond cap</span><b>${e.max_bond ? near(yocto(e.max_bond)) : "—"} NEAR</b></div></div>
         <div class="attacks">${LIVE.map((a) => `<article class="attack"><div class="ah"><span class="rid">${a.id}</span>${chip("fail", "live attack", 1)}</div><h3>${esc(a.t)}</h3><button class="btn" data-live="${a.id}">Attack from my enclave</button><div id="lr-${a.id}">${(W.results[a.id] || []).map(resLine).join("")}</div></article>`).join("")}</div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px"><button class="btn ghost" id="wcancel">Cancel my open proposals (bond back)</button><button class="btn ghost" id="wwithdraw">Withdraw my free collateral to ${esc(W.account)}</button></div><div id="wmisc"></div>`;
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px"><button class="btn ghost" id="wcancel">Cancel my open proposals (bond back)</button><button class="btn ghost" id="wtopup">Top up enclave gas (0.1 NEAR)</button><button class="btn ghost" id="wwithdraw">Withdraw my free collateral to ${esc(W.account)}</button></div><div id="wmisc"></div>`;
     }
     el.innerHTML = html;
     $("#wout").onclick = async () => { try { await W.connector.disconnect(); } catch { /* ignore */ } W.account = null; W.enclave = null; wPaint(); };
@@ -812,6 +812,13 @@
       const ts = JSON.parse(new TextDecoder().decode(new Uint8Array((await r.json()).result.result))).filter((t) => t.party_a === W.enclave && t.status === "Proposed");
       const outs = []; for (const t of ts) outs.push({ label: `cancel_proposal #${t.id}`, ...(await asEnclave("cancel_proposal", { treaty_id: t.id })) });
       $("#wmisc").innerHTML = outs.length ? outs.map(resLine).join("") : `<div class="vres">No open proposals.</div>`; setTimeout(wPaint, 2500);
+    };
+    if ($("#wtopup")) $("#wtopup").onclick = async () => {
+      try {
+        const wallet = await W.connector.wallet();
+        const out = await wallet.signAndSendTransaction({ signerId: W.account, receiverId: W.enclave, network: "testnet", actions: [{ type: "Transfer", params: { deposit: yoctoOf(0.1) } }] });
+        $("#wmisc").innerHTML = resLine({ label: "top up enclave gas 0.1 NEAR", kind: "ok", hash: out?.transaction?.hash });
+      } catch (err) { $("#wmisc").innerHTML = resLine({ label: "top up", kind: "error", msg: String(err.message || err) }); }
     };
     if ($("#wwithdraw")) $("#wwithdraw").onclick = async () => {
       const amt = e.free; const r = await asEnclave("withdraw_free_collateral", { amount: amt });

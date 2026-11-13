@@ -1,0 +1,85 @@
+{
+  "network": "testnet",
+  "contract": "pactum.stunner70.testnet",
+  "enclave": "jb15zlw.pactum.stunner70.testnet",
+  "generated": "2026-11-13T02:56:41.362Z",
+  "note": "Same calls as the site's Rob-it-yourself flow; register_enclave signed by stunner70.testnet in place of a wallet popup",
+  "results": [
+    {
+      "step": "register_enclave (0.6 NEAR, cap 0.2)",
+      "expect": "ok",
+      "pass": true,
+      "kind": "ok",
+      "hash": "2Btkn9ed4CzcGCRsoJfLP4DzFk5fUfesHws4C6Rq5Ma9",
+      "url": "https://testnet.nearblocks.io/txns/2Btkn9ed4CzcGCRsoJfLP4DzFk5fUfesHws4C6Rq5Ma9"
+    },
+    {
+      "step": "R-ROB-1a propose_treaty bond 0.15 (escrow)",
+      "expect": "ok",
+      "pass": true,
+      "kind": "ok",
+      "hash": "3UL6FheLgFME3wJZR1KBweN9cFNDw1qk413DhfidkYzh",
+      "url": "https://testnet.nearblocks.io/txns/3UL6FheLgFME3wJZR1KBweN9cFNDw1qk413DhfidkYzh"
+    },
+    {
+      "step": "R-ROB-1b withdraw_free_collateral 0.5",
+      "expect": "refused",
+      "pass": true,
+      "kind": "refused",
+      "hash": "3K96qxRq47axMF3C1QXHVKZxrb1fHxUiJPqZ5fgBLYJC",
+      "reason": "contract panic",
+      "msg": "insufficient free collateral",
+      "url": "https://testnet.nearblocks.io/txns/3K96qxRq47axMF3C1QXHVKZxrb1fHxUiJPqZ5fgBLYJC"
+    },
+    {
+      "step": "R-ROB-2 set_quorum with agent key",
+      "expect": "rejected",
+      "pass": true,
+      "kind": "rejected",
+      "msg": "MethodNameMismatch: Access key does not allow method set_quorum"
+    },
+    {
+      "step": "R-ROB-3 attach 1 yoctoNEAR with agent key",
+      "expect": "rejected",
+      "pass": true,
+      "kind": "rejected",
+      "msg": "DepositWithFunctionCall: Deposit is not allowed with function call"
+    },
+    {
+      "step": "R-ROB-4 file_dispute on treaty #1",
+      "expect": "refused",
+      "pass": true,
+      "kind": "refused",
+      "hash": "7EtFTwSKXFuvQWG7C7qUDuedGSdhhfCKBcVsQ2j48itE",
+      "reason": "contract panic",
+      "msg": "party only",
+      "url": "https://testnet.nearblocks.io/txns/7EtFTwSKXFuvQWG7C7qUDuedGSdhhfCKBcVsQ2j48itE"
+    },
+    {
+      "step": "R-ROB-10 propose_treaty bond 0.3 over cap 0.2",
+      "expect": "refused",
+      "pass": true,
+      "kind": "refused",
+      "hash": "7zzzX4EvUiBY9kx2xN7nmW5BRXj2FKLaqJgTDoQJ2zZu",
+      "reason": "contract panic",
+      "msg": "bond exceeds enclave's self-imposed cap",
+      "url": "https://testnet.nearblocks.io/txns/7zzzX4EvUiBY9kx2xN7nmW5BRXj2FKLaqJgTDoQJ2zZu"
+    },
+    {
+      "step": "cancel_proposal #4",
+      "expect": "ok",
+      "pass": true,
+      "kind": "ok",
+      "hash": "DgKi4p7f2sMwy7Dfmo4gWM4EiGNsJiFmCETP9GQBVnYD",
+      "url": "https://testnet.nearblocks.io/txns/DgKi4p7f2sMwy7Dfmo4gWM4EiGNsJiFmCETP9GQBVnYD"
+    },
+    {
+      "step": "withdraw 0.5 NEAR to stunner70.testnet",
+      "expect": "ok",
+      "pass": true,
+      "kind": "ok",
+      "hash": "HaNWJV2iJahjm2EvEodqfudvgXuE6AXDRjgs4iLRtujd",
+      "url": "https://testnet.nearblocks.io/txns/HaNWJV2iJahjm2EvEodqfudvgXuE6AXDRjgs4iLRtujd"
+    }
+  ]
+}
