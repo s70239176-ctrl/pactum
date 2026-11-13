@@ -257,7 +257,7 @@
       ${e.rep ? `<div class="block"><h4 class="label">Reputation record</h4><dl class="kv">${Object.entries(e.rep).map(([k, v]) => `<dt>${esc(k.replace(/_/g, " "))}</dt><dd>${v}</dd>`).join("")}</dl></div>` : ""}
       <div class="block"><h4 class="label">Treaties (${trs.length})</h4>${trs.length ? trs.map((t) => `<div class="ev" data-open="treaty:${t.id}" style="grid-template-columns:auto minmax(0,1fr) auto;padding:10px 0"><span class="mono">#${t.id}</span><span>${esc(short(t.a))} ↔ ${esc(short(t.b))}</span>${chip(STATUS[t.status] || "neutral", t.status)}</div>`).join("") : `<p class="dim">No treaties.</p>`}</div>
       ${evs.length ? `<div class="block"><h4 class="label">Recent events</h4>${evs.map((x) => `<div style="padding:6px 0;border-bottom:1px solid var(--line)"><span class="label">${esc(x.type)}</span><div>${esc(x.text)}</div>${x.tx ? txLink(x.tx) : ""}</div>`).join("")}</div>` : ""}
-      <p class="mute" style="margin-top:22px;font-size:12px">Actions on an enclave are taken by its agent runtime with its own function-call key (meta transactions). This interface is read-only.</p>`);
+      <p class="mute" style="margin-top:22px;font-size:12px">Actions on an enclave are taken by its agent runtime with its own function-call key (meta transactions). To act yourself, connect a testnet wallet under <a href="#/verify">Verify → Rob it yourself</a>.</p>`);
   }
 
   function treatyDrawer(id) {
@@ -442,7 +442,7 @@
       <header class="topbar"><button class="menu-btn" id="smenu" aria-label="Open navigation" aria-expanded="false">${I.menu}</button><a class="brand" href="#/">${I.logo}<span class="hide-xs">PACTUM</span></a><span class="sep hide-sm"></span>
         <div class="ctx"><span data-netstat class="hide-sm">${netstat()}</span><span class="mono hide-sm" title="Contract">${esc(S.mode === "live" ? S.contract : M()?.contract || "demo")}</span></div><span class="spacer"></span>
         <div class="seg" role="group" aria-label="Data source"><button data-mode="live" aria-pressed="${S.mode === "live"}">Live testnet</button><button data-mode="demo" aria-pressed="${S.mode === "demo"}">Demo</button></div>
-        <span class="chip neutral hide-sm" title="This interface is read-only. Agents act with their own function-call keys.">Read-only</span></header>
+        <a class="btn primary hide-sm" href="#/verify" title="Connect a testnet wallet and attack the protocol from your own enclave">Rob it yourself</a></header>
       <aside class="sidebar" id="sidebar"><nav aria-label="Application">${NAV.map(([r, l, ic]) => `<a href="#/${r}" class="${r === "tribunal" ? "tribunal" : ""}" ${route === r ? 'aria-current="page"' : ""}>${ic}${l}</a>`).join("")}</nav>
         <div class="foot"><a class="btn primary" href="#/verify" style="width:100%;justify-content:center;margin-bottom:12px">Verify in 3 min</a>${modeBadge()}<div style="margin-top:10px">${S.mode === "live" ? "Contract views over NEAR RPC. Transaction links come from the recorded testnet run." : "Scripted simulation from <span class='mono'>npm run sim</span>. No chain transactions."}</div></div></aside>
       <main class="main view-enter" id="main">${inner}</main></div>`;
@@ -690,18 +690,149 @@
     const el = $("#vtally"); if (el) el.innerHTML = v.length ? `${ref}/${onchain} on-chain attacks refused · fetched live from testnet${v.some(([, s]) => s === "error") ? " · some fetches failed (network)" : ""}` : "";
   }
 
+  // ---- "Rob it yourself": the judge's own testnet wallet + an enclave whose key lives in this browser.
+  // Libraries are pinned and loaded on demand (no build step). No Pactum keys are involved.
+  const LIBS = { nc: "https://esm.sh/@hot-labs/near-connect@0.12.0", naj: "https://esm.sh/near-api-js@7.4.0" };
+  const W = { connector: null, account: null, enclave: null, sk: null, lib: null, busy: false, results: {} };
+  const ENCLAVE_DEPOSIT = "600000000000000000000000"; // 0.6 NEAR: 0.1 account funding + 0.5 collateral
+  const yoctoOf = (n) => (BigInt(Math.round(n * 1e6)) * 10n ** 18n).toString();
+  const keyStore = (acct) => `pactum.enclave.${acct}`;
+  function wLoad() {
+    try { const v = JSON.parse(localStorage.getItem(keyStore(W.account)) || "null"); if (v) { W.enclave = v.enclave; W.sk = v.sk; } } catch { /* storage blocked */ }
+  }
+  function wSave() { try { localStorage.setItem(keyStore(W.account), JSON.stringify({ enclave: W.enclave, sk: W.sk })); } catch { /* storage blocked */ } }
+  async function libs() {
+    if (!W.lib) {
+      const [nc, naj] = await Promise.all([import(LIBS.nc), import(LIBS.naj)]);
+      W.lib = { nc, naj };
+    }
+    return W.lib;
+  }
+  async function wConnect() {
+    const { nc } = await libs();
+    W.connector ||= new nc.NearConnector({ network: "testnet" });
+    W.connector.on("wallet:signOut", () => { W.account = null; W.enclave = null; W.sk = null; wPaint(); });
+    await W.connector.connect();
+    const wallet = await W.connector.wallet();
+    const accts = await wallet.getAccounts({ network: "testnet" });
+    W.account = accts[0]?.accountId || null;
+    if (W.account) wLoad();
+  }
+  async function wTryRestore() {
+    try {
+      const { nc } = await libs();
+      W.connector ||= new nc.NearConnector({ network: "testnet" });
+      const wallet = await W.connector.wallet();
+      const accts = await wallet.getAccounts({ network: "testnet" });
+      if (accts[0]) { W.account = accts[0].accountId; wLoad(); }
+    } catch { /* not signed in */ }
+  }
+  async function enclaveState() {
+    if (!W.enclave) return null;
+    try { const r = await fetch(RPC, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "query", params: { request_type: "call_function", finality: "optimistic", account_id: V.ev?.contract || S.contract, method_name: "get_enclave", args_base64: btoa(JSON.stringify({ account: W.enclave })) } }) });
+      const j = await r.json(); return j.result ? JSON.parse(new TextDecoder().decode(new Uint8Array(j.result.result))) : null; } catch { return null; }
+  }
+  async function wCreateEnclave() {
+    const { naj } = await libs();
+    const C = V.ev?.contract || S.contract;
+    const kp = naj.KeyPair.fromRandom("ed25519");
+    const name = "j" + Math.random().toString(36).slice(2, 8);
+    const wallet = await W.connector.wallet();
+    const out = await wallet.signAndSendTransaction({
+      signerId: W.account, receiverId: C, network: "testnet",
+      actions: [{ type: "FunctionCall", params: { methodName: "register_enclave", args: { name, agent_public_key: kp.getPublicKey().toString(), beneficiary: W.account, payout: { chain: "near", address: W.account }, max_bond: yoctoOf(0.2), guardian: W.account }, gas: "150000000000000", deposit: ENCLAVE_DEPOSIT } }],
+    });
+    W.enclave = `${name}.${C}`; W.sk = kp.toString(); wSave();
+    return out?.transaction?.hash || out?.transaction_outcome?.id;
+  }
+  // Sign with the enclave's function-call key (this is exactly what an agent runtime holds).
+  async function asEnclave(method, args, depositYocto = "0") {
+    const { naj } = await libs();
+    const C = V.ev?.contract || S.contract;
+    const acct = new naj.Account(W.enclave, new naj.JsonRpcProvider({ url: RPC }), naj.KeyPairSigner.fromSecretKey(W.sk));
+    try {
+      const r = await acct.signAndSendTransaction({ receiverId: C, actions: [naj.actions.functionCall(method, args, naj.teraToGas("60"), BigInt(depositYocto))], throwOnFailure: false });
+      const hash = r.transaction?.hash || r.transaction_outcome?.id;
+      const fail = r.receipts_outcome?.find((x) => x.outcome.status?.Failure) || (r.status?.Failure ? { outcome: { status: r.status } } : null);
+      return fail ? { kind: "refused", hash, f: failureText(fail.outcome.status.Failure) } : { kind: "ok", hash };
+    } catch (e) {
+      // Rejected by the network before inclusion (e.g. function-call key permission): no tx hash exists.
+      const m = String(e?.message || e);
+      const k = m.match(/MethodNameMismatch|DepositWithFunctionCall|NotEnoughAllowance|ReceiverMismatch/)?.[0];
+      return { kind: k ? "rejected" : "error", msg: k ? `${k}: ${m.slice(0, 160)}` : m.slice(0, 220) };
+    }
+  }
+  const LIVE = [
+    { id: "R-ROB-1", t: "Lock a 0.15 NEAR bond in a treaty, then withdraw 0.5 NEAR", run: async () => {
+      const lock = await asEnclave("propose_treaty", { counterparty: `atlas.${V.ev.contract}`, terms: "Judge test: my enclave offers an uptime guarantee to atlas.", bond: yoctoOf(0.15), counter_bond: yoctoOf(0.1), duration_ns: String(86_400e9), notice_ns: "1000" });
+      const steal = await asEnclave("withdraw_free_collateral", { amount: yoctoOf(0.5) });
+      return [{ label: "propose_treaty (bond 0.15 → escrow)", ...lock }, { label: "withdraw_free_collateral 0.5", ...steal }];
+    } },
+    { id: "R-ROB-2", t: "Use the agent key to call the admin method set_quorum", run: async () => [{ label: "set_quorum(1)", ...(await asEnclave("set_quorum", { quorum: 1 })) }] },
+    { id: "R-ROB-3", t: "Use the agent key to move 0.1 NEAR", run: async () => [{ label: "deposit_collateral with 0.1 NEAR attached", ...(await asEnclave("deposit_collateral", { enclave: W.enclave }, yoctoOf(0.1))) }] },
+    { id: "R-ROB-4", t: "Open a dispute on atlas ↔ meridian (a treaty you're not in)", run: async () => [{ label: "file_dispute on treaty #1", ...(await asEnclave("file_dispute", { treaty_id: 1, allegation: "I am not a party.", evidence_uri: "https://example.com/x", evidence_sha256: "a".repeat(64), dispute_bond: yoctoOf(0.1) })) }] },
+    { id: "R-ROB-10", t: "Bond 0.3 NEAR, above your enclave's own 0.2 NEAR cap", run: async () => [{ label: "propose_treaty bond 0.3", ...(await asEnclave("propose_treaty", { counterparty: `atlas.${V.ev.contract}`, terms: "Judge test: over-cap bond.", bond: yoctoOf(0.3), counter_bond: yoctoOf(0.1), duration_ns: String(86_400e9), notice_ns: "1000" })) }] },
+  ];
+  const resLine = (r) => r.kind === "ok" ? `<div class="vres ok">✓ ${esc(r.label)}: <b>succeeded</b> ${txLink(r.hash)}</div>`
+    : r.kind === "refused" ? `<div class="vres ok"><b>✓ ${esc(r.label)}: refused on-chain</b> · ${esc(r.f.kind)}<div class="mono" style="color:var(--ok)">${esc(r.f.msg)}</div>${txLink(r.hash, "your transaction on nearblocks")}</div>`
+    : r.kind === "rejected" ? `<div class="vres ok"><b>✓ ${esc(r.label)}: rejected by the network</b> · function-call key permission<div class="mono" style="color:var(--ok)">${esc(r.msg)}</div><div class="mute" style="font-size:11.5px">NEAR validators refuse to include a transaction that the signing key isn't allowed to make, so no transaction hash exists.</div></div>`
+    : `<div class="vres bad">${esc(r.label)}: ${esc(r.msg)}</div>`;
+  async function wPaint() {
+    const el = $("#robself"); if (!el) return;
+    if (!W.account) {
+      el.innerHTML = `<p class="dim" style="margin-top:0">Connect a NEAR <b>testnet</b> wallet (free test NEAR from the faucet). You create your own enclave with 0.6 testnet NEAR, then attack the protocol from it. Your enclave's agent key is generated and kept in this browser; Pactum never sees your wallet keys.</p><button class="btn primary" id="wconnect">Connect testnet wallet</button>`;
+      $("#wconnect").onclick = async () => { $("#wconnect").disabled = true; try { await wConnect(); } catch (e) { el.insertAdjacentHTML("beforeend", `<div class="vres bad">${esc(e.message || e)}</div>`); } wPaint(); };
+      return;
+    }
+    const st = await enclaveState();
+    const e = st?.enclave;
+    let html = `<div class="filters" style="justify-content:space-between"><span>Connected: <b class="mono">${esc(W.account)}</b></span><button class="btn ghost" id="wout">Disconnect</button></div>`;
+    if (!W.enclave || !e) {
+      html += `<p class="dim">Step 1: create your enclave, a sub-account the contract creates for you, holding only a function-call key (7 Pactum methods, 0.25 NEAR gas allowance), with 0.5 NEAR collateral and a self-imposed 0.2 NEAR bond cap. Cost: 0.6 testnet NEAR from your wallet.${W.enclave && !e ? ` <span class="mono">${esc(W.enclave)}</span> isn't active yet: wait a few seconds or create a new one.` : ""}</p><button class="btn primary" id="wcreate">Create my enclave (0.6 testnet NEAR)</button>`;
+    } else {
+      html += `<div class="gstat" style="margin-top:12px"><div><span class="label">Your enclave</span><b class="mono" style="font-size:12.5px;word-break:break-all">${esc(W.enclave)}</b></div><div><span class="label">Free</span><b>${near(yocto(e.free))} NEAR</b></div><div><span class="label">Escrowed</span><b>${near(yocto(e.locked))} NEAR</b></div><div><span class="label">Bond cap</span><b>${e.max_bond ? near(yocto(e.max_bond)) : "—"} NEAR</b></div></div>
+        <div class="attacks">${LIVE.map((a) => `<article class="attack"><div class="ah"><span class="rid">${a.id}</span>${chip("fail", "live attack", 1)}</div><h3>${esc(a.t)}</h3><button class="btn" data-live="${a.id}">Attack from my enclave</button><div id="lr-${a.id}">${(W.results[a.id] || []).map(resLine).join("")}</div></article>`).join("")}</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px"><button class="btn ghost" id="wcancel">Cancel my open proposals (bond back)</button><button class="btn ghost" id="wwithdraw">Withdraw my free collateral to ${esc(W.account)}</button></div><div id="wmisc"></div>`;
+    }
+    el.innerHTML = html;
+    $("#wout").onclick = async () => { try { await W.connector.disconnect(); } catch { /* ignore */ } W.account = null; W.enclave = null; wPaint(); };
+    if ($("#wcreate")) $("#wcreate").onclick = async () => {
+      $("#wcreate").disabled = true; $("#wcreate").textContent = "Waiting for your wallet…";
+      try { const h = await wCreateEnclave(); for (let i = 0; i < 10 && !(await enclaveState())?.enclave?.active; i++) await new Promise((ok) => setTimeout(ok, 1500)); el.insertAdjacentHTML("afterbegin", h ? `<div class="vres ok">✓ Enclave created ${txLink(h)}</div>` : ""); }
+      catch (err) { el.insertAdjacentHTML("beforeend", `<div class="vres bad">${esc(err.message || err)}</div>`); }
+      wPaint();
+    };
+    $$("[data-live]", el).forEach((b) => (b.onclick = async () => {
+      const a = LIVE.find((x) => x.id === b.dataset.live); b.disabled = true; b.textContent = "Sending…";
+      try { W.results[a.id] = await a.run(); } catch (err) { W.results[a.id] = [{ label: a.id, kind: "error", msg: String(err.message || err) }]; }
+      wPaint();
+    }));
+    if ($("#wcancel")) $("#wcancel").onclick = async () => {
+      const C = V.ev.contract; const r = await fetch(RPC, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "query", params: { request_type: "call_function", finality: "optimistic", account_id: C, method_name: "list_treaties", args_base64: btoa(JSON.stringify({ from: 0, limit: 500 })) } }) });
+      const ts = JSON.parse(new TextDecoder().decode(new Uint8Array((await r.json()).result.result))).filter((t) => t.party_a === W.enclave && t.status === "Proposed");
+      const outs = []; for (const t of ts) outs.push({ label: `cancel_proposal #${t.id}`, ...(await asEnclave("cancel_proposal", { treaty_id: t.id })) });
+      $("#wmisc").innerHTML = outs.length ? outs.map(resLine).join("") : `<div class="vres">No open proposals.</div>`; setTimeout(wPaint, 2500);
+    };
+    if ($("#wwithdraw")) $("#wwithdraw").onclick = async () => {
+      const amt = e.free; const r = await asEnclave("withdraw_free_collateral", { amount: amt });
+      $("#wmisc").innerHTML = resLine({ label: `withdraw ${near(yocto(amt))} NEAR to ${W.account}`, ...r }); setTimeout(wPaint, 2500);
+    };
+  }
+
   const COPY = (cmd) => `<div class="cmd"><code>${esc(cmd)}</code><button class="btn ghost" data-copy="${esc(cmd)}" aria-label="Copy command">Copy</button></div>`;
   function vVerify() {
     const ruleIds = Object.keys(ATTACK);
     return pageHead("Judge path", "VERIFY IN 3 MINUTES", "Try to break a treaty, then check every claim against the chain. No wallet, no API key.").replace(modeBadge(), `<span class="mode-badge live">REAL TESTNET EVIDENCE</span>`) + `
       <section class="panel" style="margin-bottom:var(--gap)"><header><h2>Do X → See Y</h2></header><div class="body"><ol class="steps">
+        <li><b>Optional, most convincing: “Rob it yourself”.</b> <span class="dim">Connect a testnet wallet, create your own enclave (0.6 testnet NEAR), and launch the attacks yourself. Each one is refused by the contract or the network, with your own transaction link.</span></li>
         <li><b>Click “Attempt all” below.</b> <span class="dim">See each recorded attack fetched live from NEAR testnet and refused: contract panics and runtime key refusals, each with its nearblocks link.</span></li>
         <li><b>Click “Check the ruling”.</b> <span class="dim">See the dispute decided by three NEAR AI Cloud TEE judges succeed on-chain (CRITICAL_BREACH).</span></li>
         <li><b>Open <a href="#/tribunal">Tribunal</a>.</b> <span class="dim">See the three real model votes, each judge's attested TEE signer, and every stage linked to its transaction.</span></li>
         <li><b>Open <a href="#/markets">Bonded Markets</a> (optional).</b> <span class="dim">See the same machinery run competitive markets: three scored rounds and a P&amp;L leaderboard (simulation, with a real testnet counterpart).</span></li>
         <li><b>Run the CLI below (optional, ~1 minute).</b> <span class="dim">See the full simulation re-run, every signature re-verified, and live contract state.</span></li>
       </ol></div></section>
-      <section class="panel" style="margin-bottom:var(--gap)"><header><h2>Try to rob the treaty</h2><div class="filters"><span class="mono" id="vtally" style="color:var(--ok)"></span><button class="btn primary" id="vall">Attempt all</button></div></header>
+      <section class="panel" id="rob" style="margin-bottom:var(--gap);border-color:rgba(184,243,107,.35)"><header><h2>Rob it yourself · your testnet wallet</h2><span class="mode-badge live">NEW REAL TRANSACTIONS</span></header><div class="body" id="robself"><div class="skeleton" style="height:40px"></div></div></section>
+      <section class="panel" style="margin-bottom:var(--gap)"><header><h2>Recorded attacks · replayed from the chain</h2><div class="filters"><span class="mono" id="vtally" style="color:var(--ok)"></span><button class="btn primary" id="vall">Attempt all</button></div></header>
         <div class="body"><p class="dim" style="margin:0 0 14px">Each <b>Attempt</b> replays a real transaction already on testnet (contract <span class="mono">${esc(V.ev?.contract || S.contract)}</span>): it fetches that transaction from archival RPC right now and shows what the chain did. It does not send a new transaction.</p>
         <div class="attacks">${ruleIds.map((r) => { const it = V.ev?.items.find((i) => i.step.startsWith(r + " ")); return `<article class="attack">
           <div class="ah"><span class="rid">${r}</span>${it?.hash ? chip("ok", "on-chain", 1) : r === "R-ROB-9" ? chip("neutral", "unit test + sim") : chip("warn", "not on-chain")}</div>
@@ -738,6 +869,8 @@
     $("#vall").onclick = async () => { $("#vall").disabled = true; for (const r of Object.keys(ATTACK)) await attempt(r); $("#vall").disabled = false; };
     $$("[data-copy]").forEach((b) => (b.onclick = async () => { try { await navigator.clipboard.writeText(b.dataset.copy); b.textContent = "Copied"; } catch { b.textContent = "Select & copy"; } setTimeout(() => (b.textContent = "Copy"), 1500); }));
     tally();
+    await wTryRestore();
+    wPaint();
   }
 
   // ---------------------------------------------------------------- bonded markets (simulation + real counterpart)
