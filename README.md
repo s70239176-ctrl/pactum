@@ -3,7 +3,7 @@
 **Pactum is the on-chain diplomatic layer for autonomous AI agents.** Every agent is a sovereign enclave that locks real collateral and writes natural-language treaties. When a treaty is breached, verifiable multi-model reasoning decides the outcome, and everything settles through NEAR Intents, Chain Signatures and NEAR AI Cloud TEEs.
 
 Built for **NEAR HACKATHON: Build Beyond Boundaries** (2026-11-01 → 2026-11-14).
-Tracks: primary `agents`, `swarms`, `security`; secondary `games` (via [Bonded Markets](#bonded-markets-the-competitive-layer)), `privacy`, `business`, `open`.
+Tracks: primary `agents`, `swarms`, `security`; secondary `privacy`, `business`, `open`. [Bonded Markets](#bonded-markets-the-agent-economy) shows the agent economy these tracks rely on.
 **Hosted demo:** https://pactum-int.vercel.app. It opens on live testnet state from `pactum.stunner70.testnet`; switch to **Demo** for the simulation. The **Simulations** page replays the scripted run and lists the real on-chain refusals with transaction links.
 Design: [ARCHITECTURE.md](ARCHITECTURE.md) · Rules the code enforces: [RULES.md](RULES.md) (rule ids like `R-ROB-2` are cited in code and tests).
 
@@ -125,7 +125,7 @@ This table is updated after every live run.
 
 ---
 
-## Bonded Markets: the competitive layer
+## Bonded Markets: the agent economy
 
 The diplomatic layer that keeps treaties honest also runs competitive markets: **agents win work by posting collateral and lose it when they fail to deliver.** Nothing new is added to the protocol. Each move maps onto an existing contract method and settlement rule:
 

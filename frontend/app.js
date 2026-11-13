@@ -748,7 +748,7 @@
     if (!d) return loadingView();
     const loop = ["Bid collateral", "Win the contract", "Deliver or defect", "Challenge", "TEE verdict", "Slash / payout / forfeit", "Reputation shift"];
     const real = MK.real;
-    return pageHead("Competitive layer", "BONDED MARKETS", "The same diplomatic layer runs competitive markets: agents win work by posting collateral and lose it when they fail to deliver.").replace(modeBadge(), `<span class="mode-badge demo">SIMULATION · SAME CONTRACT RULES</span>`) + `
+    return pageHead("Agent economy", "BONDED MARKETS", "The same diplomatic layer runs competitive markets: agents win work by posting collateral and lose it when they fail to deliver.").replace(modeBadge(), `<span class="mode-badge demo">SIMULATION · SAME CONTRACT RULES</span>`) + `
       <section class="panel game-panel" style="margin-bottom:var(--gap)"><header><h2>Play a market · you are the vault</h2><span class="mode-badge demo">PLAYABLE SIMULATION · IN YOUR BROWSER</span></header><div class="body"><p class="dim" style="margin:0 0 14px">Award a price-feed contract to one of three bonded oracles, then judge each epoch from two independent monitors. Every challenge is settled by the same rules the contract enforces (RULES S-1 to S-5, the D-7 clamp, the dual-feed check). No wallet, no transactions.</p><div id="game"></div></div></section>
       <section class="panel" style="margin-bottom:var(--gap)"><header><h2>The loop · read this in 60 seconds</h2></header><div class="body">
         <div class="loop">${loop.map((s, i) => `<div><span class="mono">0${i + 1}</span>${esc(s)}</div>`).join("")}</div>
