@@ -1206,7 +1206,7 @@
       if (M() && $("#land-topo")) topology($("#land-topo"), { mini: true });
       bindRefs(root);
       const mb = $("#lmenu"); if (mb) mb.onclick = () => { const p = $("#lmenu-panel"); const o = p.classList.toggle("open"); mb.setAttribute("aria-expanded", o); };
-      document.title = "Pactum · Sovereign digital diplomacy";
+      document.title = "Pactum Protocol · Sovereign digital diplomacy";
       const anchor = r && document.getElementById(r);
       if (anchor) anchor.scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth" });
       return;
@@ -1214,7 +1214,7 @@
     if (r !== "simulation" && sim.timer) simPause();
     const inner = r === "verify" || r === "markets" ? loadingView() : r === "simulation" ? vSimulation() : S.loading ? loadingView() : S.error ? errorView() : VIEWS[r]();
     root.innerHTML = shell(r, inner);
-    document.title = `Pactum · ${NAV.find((n) => n[0] === r)[1]}`;
+    document.title = `Pactum Protocol · ${NAV.find((n) => n[0] === r)[1]}`;
     $$("[data-mode]").forEach((b) => (b.onclick = () => b.dataset.mode !== S.mode && setMode(b.dataset.mode)));
     const sm = $("#smenu"); sm.onclick = () => { const o = $("#sidebar").classList.toggle("open"); sm.setAttribute("aria-expanded", o); };
     $$("#sidebar a").forEach((a) => a.addEventListener("click", () => $("#sidebar").classList.remove("open")));
