@@ -8,7 +8,7 @@ const Yn = (y: string) => (Number(BigInt(y) / 10n ** 21n) / 1000).toString();
 
 async function load() {
   if (!process.argv.includes("--chain")) {
-    const d = JSON.parse(readFileSync(new URL("frontend/demo-data.json", root), "utf8"));
+    const d = JSON.parse(readFileSync(new URL("frontend/data/demo-data.json", root), "utf8"));
     return { source: `simulation (${d.generated})`, ...d.timeline.find((e: { type: string }) => e.type === "snapshot").snapshot };
   }
   const { view, contractId } = await import("./chain.ts");
