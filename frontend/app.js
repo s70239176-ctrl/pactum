@@ -408,14 +408,14 @@
     const proof = m && m.mode === "live" ? `<div class="hero-proof"><div><b>${m.enclaves.length}</b><span class="mute">enclaves on testnet</span></div><div><b>${m.refusals.filter((r) => r.onchain).length}</b><span class="mute">attacks refused on-chain</span></div><div><b>${m.disputes.filter((d) => d.status === "Resolved").length}</b><span class="mute">rulings verified on-chain</span></div></div>` : "";
     return `<div class="landing view-enter">
       <nav class="lnav" aria-label="Primary"><a class="brand" href="#/">${I.logo}PACTUM</a>
-        <div class="links"><a href="#protocol">Protocol</a><a href="#/diplomacy">Network</a><a href="#/tribunal">Tribunal</a><a href="${REPO}#readme" target="_blank" rel="noopener">Documentation</a></div>
+        <div class="links"><a href="#/verify" style="color:var(--emerald)">Verify</a><a href="#protocol">Protocol</a><a href="#/diplomacy">Network</a><a href="#/tribunal">Tribunal</a><a href="${REPO}#readme" target="_blank" rel="noopener">Documentation</a></div>
         <div class="right"><span data-netstat>${netstat()}</span><a class="btn primary" href="#/command">ENTER COMMAND</a><button class="menu-btn" id="lmenu" aria-label="Open menu" aria-expanded="false">${I.menu}</button></div></nav>
-      <div class="mobile-menu" id="lmenu-panel"><a href="#/command" style="color:var(--emerald);font-weight:600">Enter command →</a><a href="#protocol">Protocol</a><a href="#/diplomacy">Network</a><a href="#/tribunal">Tribunal</a><a href="${REPO}#readme" target="_blank" rel="noopener">Documentation</a><span style="padding:10px 4px" data-netstat>${netstat()}</span></div>
+      <div class="mobile-menu" id="lmenu-panel"><a href="#/verify" style="color:var(--emerald);font-weight:600">Verify in 3 minutes →</a><a href="#/command">Enter command</a><a href="#protocol">Protocol</a><a href="#/diplomacy">Network</a><a href="#/tribunal">Tribunal</a><a href="${REPO}#readme" target="_blank" rel="noopener">Documentation</a><span style="padding:10px 4px" data-netstat>${netstat()}</span></div>
       <header class="hero"><div>
           <span class="kicker label"><span class="dot" style="color:var(--emerald)"></span>Built on NEAR · Testnet</span>
           <h1>SOVEREIGN<br>DIGITAL <em>DIPLOMACY.</em></h1>
           <p class="lead">The infrastructure for autonomous agents to negotiate, bond, adjudicate and enforce agreements through cryptographic trust.</p>
-          <div class="ctas"><a class="btn primary" href="#/command">ENTER COMMAND</a><a class="btn ghost" href="#protocol">EXPLORE PROTOCOL</a></div>${proof}
+          <div class="ctas"><a class="btn primary" href="#/verify">VERIFY IN 3 MINUTES</a><a class="btn" href="#/command">ENTER COMMAND</a><a class="btn ghost" href="#protocol">EXPLORE PROTOCOL</a></div><p class="mute" style="margin-top:12px;font-size:13px">Judges: try to rob a treaty and watch the chain refuse it, fetched live from NEAR testnet. No wallet needed.</p>${proof}
         </div><div>${heroArt}</div></header>
       <section class="sec" id="protocol"><span class="label">Core capabilities</span><h2>An institution, not an app.</h2><p class="intro">Every agent gets a sovereign identity it cannot drain, every agreement is backed by escrow, and every dispute ends in a verifiable ruling enforced by the contract itself.</p>
         <div class="caps">
@@ -436,7 +436,7 @@
   }
 
   // ---------------------------------------------------------------- app shell
-  const NAV = [["command", "Command", I.command], ["diplomacy", "Diplomacy", I.diplomacy], ["enclaves", "Enclaves", I.enclave], ["treaties", "Treaties", I.treaty], ["tribunal", "Tribunal", I.tribunal], ["simulation", "Simulations", I.sim], ["events", "Events", I.events]];
+  const NAV = [["verify", "Verify", I.shield.replace('viewBox="0 0 32 32"', 'viewBox="0 0 32 32" width="17" height="17"')], ["command", "Command", I.command], ["diplomacy", "Diplomacy", I.diplomacy], ["enclaves", "Enclaves", I.enclave], ["treaties", "Treaties", I.treaty], ["tribunal", "Tribunal", I.tribunal], ["simulation", "Simulations", I.sim], ["events", "Events", I.events]];
   function shell(route, inner) {
     return `<div class="app">
       <header class="topbar"><button class="menu-btn" id="smenu" aria-label="Open navigation" aria-expanded="false">${I.menu}</button><a class="brand" href="#/">${I.logo}<span class="hide-xs">PACTUM</span></a><span class="sep hide-sm"></span>
@@ -444,7 +444,7 @@
         <div class="seg" role="group" aria-label="Data source"><button data-mode="live" aria-pressed="${S.mode === "live"}">Live testnet</button><button data-mode="demo" aria-pressed="${S.mode === "demo"}">Demo</button></div>
         <span class="chip neutral hide-sm" title="This interface is read-only. Agents act with their own function-call keys.">Read-only</span></header>
       <aside class="sidebar" id="sidebar"><nav aria-label="Application">${NAV.map(([r, l, ic]) => `<a href="#/${r}" class="${r === "tribunal" ? "tribunal" : ""}" ${route === r ? 'aria-current="page"' : ""}>${ic}${l}</a>`).join("")}</nav>
-        <div class="foot">${modeBadge()}<div style="margin-top:10px">${S.mode === "live" ? "Contract views over NEAR RPC. Transaction links come from the recorded testnet run." : "Scripted simulation from <span class='mono'>npm run sim</span>. No chain transactions."}</div></div></aside>
+        <div class="foot"><a class="btn primary" href="#/verify" style="width:100%;justify-content:center;margin-bottom:12px">Verify in 3 min</a>${modeBadge()}<div style="margin-top:10px">${S.mode === "live" ? "Contract views over NEAR RPC. Transaction links come from the recorded testnet run." : "Scripted simulation from <span class='mono'>npm run sim</span>. No chain transactions."}</div></div></aside>
       <main class="main view-enter" id="main">${inner}</main></div>`;
   }
   const pageHead = (kicker, title, sub, tools = "") => `<div class="page-head"><div><span class="label">${kicker}</span><h1>${title}</h1><p>${sub}</p></div><div class="tools">${modeBadge()}${tools}</div></div>`;
@@ -567,7 +567,7 @@
 
   function vSimulation() {
     return `<div class="warroom">${pageHead("War room", "TREATY BREACH SIMULATION", "Observe how Pactum responds to adversarial actions.").replace(modeBadge(), `<span class="mode-badge demo">DEMO DATA · SIMULATION</span>`)}
-      <div class="notice"><b>Demonstration data.</b>&nbsp;This replays the scripted <span class="mono">npm run sim</span> run (contract mirror, simulated TEE judges). Real on-chain refusals from testnet are listed below with transaction links.</div>
+      <div class="notice"><b>Demonstration data.</b>&nbsp;This replays the scripted <span class="mono">npm run sim</span> run (contract mirror, simulated TEE judges). To check the real attacks against NEAR testnet, open <a href="#/verify">Verify</a> and click <b>Attempt all</b>.</div>
       <section class="panel" style="margin-bottom:var(--gap)"><div class="body" style="display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap;align-items:center">
         <div class="sim-controls"><button class="btn primary" id="sp">${I.play} Play</button><button class="btn" id="ss">${I.step} Step</button><button class="btn" id="se">${I.end} Jump to end</button><button class="btn" id="sr">${I.reset} Reset</button><label class="speed">Speed <input type="range" id="sv" min="150" max="1600" step="50" value="${1750 - sim.speed}" aria-label="Playback speed"></label></div>
         <div style="flex:1;min-width:180px"><div class="mono mute" id="spos" style="margin-bottom:6px"></div><div class="progress"><i id="sbar"></i></div></div></div></section>
@@ -613,8 +613,134 @@
     $("#stl").innerHTML = st.log.length ? `<div class="stream">${[...st.log].reverse().map((e) => { const x = demoEvent(e); return `<div class="ev"><span class="t">T+${String(e.t).padStart(2, "0")}</span><div><div class="k">${chip(EV_CLS[x.type] || "neutral", x.type)}${x.actor ? `<span class="mono mute">${esc(x.actor)}</span>` : ""}</div><div class="d">${esc(e.text)}</div></div><div>${x.status ? chip("fail", "refused") : ""}</div></div>`; }).join("")}</div>` : `<div class="empty">Press Play to start the replay.</div>`;
   }
 
+  // ---------------------------------------------------------------- verify (judge path)
+  // Replays recorded attack transactions straight from NEAR testnet (archival RPC, no wallet):
+  // the button fetches the real transaction NOW and shows the receipt that the chain refused.
+  const ARCHIVAL = ["https://archival-rpc.testnet.fastnear.com", "https://archival-rpc.testnet.near.org"];
+  const TESTS = {
+    "R-ROB-1": "rob1_withdraw_locked_bond", "R-ROB-4": "rob4_outsider_files_dispute", "R-ROB-5": "rob5_forged_vote · rob5_duplicate_vote · rob5_tampered_response",
+    "R-ROB-6": "rob6_replay_other_dispute", "R-ROB-7": "rob7_ratify_altered_terms", "R-ROB-8": "rob8_outsider_cannot_admin", "R-ROB-9": "rob9_frozen_enclave", "R-ROB-10": "rob10_bond_over_cap",
+  };
+  const CAVEAT = {
+    "R-ROB-7": "On testnet the treaty was already ACTIVE, so the contract refused at its state check (“not proposed”) before reaching the terms-hash check. The terms-hash refusal itself is proven by the unit test.",
+    "R-ROB-8": "Never reached the chain: the script sent it as a direct transaction from an account holding 0.1 NEAR, and the client refused it for insufficient balance. The owner-only check is proven by the unit test.",
+  };
+  const ATTACK = {
+    "R-ROB-1": "Defendant tries to withdraw its bond while the treaty is ACTIVE",
+    "R-ROB-2": "Agent's function-call key calls an admin method (set_quorum)",
+    "R-ROB-3": "Agent's function-call key tries to move 0.5 NEAR",
+    "R-ROB-4": "Outsider files a dispute on someone else's treaty",
+    "R-ROB-5": "Relayer submits forged / duplicated judge votes",
+    "R-ROB-6": "Relayer replays a valid vote onto another dispute",
+    "R-ROB-7": "Counterparty ratifies with altered terms",
+    "R-ROB-8": "Agent calls an owner-only method",
+    "R-ROB-9": "Frozen enclave tries to act",
+    "R-ROB-10": "Agent bonds above its own self-imposed cap",
+  };
+  const V = { ev: null, judges: null, results: {} };
+
+  async function archivalTx(hash, sender) {
+    let last;
+    for (const url of ARCHIVAL) {
+      try {
+        const r = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ jsonrpc: "2.0", id: "pactum-verify", method: "tx", params: { tx_hash: hash, sender_account_id: sender, wait_until: "NONE" } }) });
+        const j = await r.json();
+        if (j.error) throw new Error(j.error.cause?.name || j.error.message);
+        return { ...j.result, rpc: url };
+      } catch (e) { last = e; }
+    }
+    throw last;
+  }
+  const failureText = (f) => {
+    const s = JSON.stringify(f);
+    const m = s.match(/Smart contract panicked: ([^"\\]+)/); if (m) return { kind: "contract panic", msg: m[1] };
+    const k = f?.ActionError?.kind?.DelegateActionAccessKeyError;
+    if (k) return { kind: "runtime · function-call key", msg: typeof k === "string" ? k : `${Object.keys(k)[0]} ${JSON.stringify(Object.values(k)[0])}` };
+    return { kind: "failure", msg: s.slice(0, 160) };
+  };
+
+  async function attempt(rule) {
+    const it = V.ev.items.find((i) => i.step.startsWith(rule + " ")) || (rule === "RULING" ? V.judges?.items.find((i) => i.step === "submit_verdicts") : null);
+    const out = $(`#vr-${CSS.escape(rule)}`); const btn = $(`[data-attempt="${CSS.escape(rule)}"]`);
+    if (!it?.hash) { out.innerHTML = `<div class="vres warn">No transaction to fetch: ${esc(CAVEAT[rule] || "this case is covered by the unit test and the simulation.")}</div>`; V.results[rule] = "offchain"; return; }
+    btn.disabled = true; out.innerHTML = `<div class="vres"><span class="skeleton" style="display:block;width:60%"></span><div class="mono mute" style="margin-top:6px">fetching ${esc(shortHash(it.hash, 10))} from archival testnet RPC…</div></div>`;
+    try {
+      const sender = V.ev.contract.split(".").slice(1).join(".");
+      const t = await archivalTx(it.hash, sender);
+      const failed = t.receipts_outcome.find((r) => r.outcome.status?.Failure);
+      if (rule === "RULING") {
+        const val = t.status?.SuccessValue ? atob(t.status.SuccessValue) : "";
+        out.innerHTML = `<div class="vres ok"><b>✓ Succeeded on-chain</b> · returned <span class="mono">${esc(val)}</span><div class="mono mute">block ${esc(shortHash(t.transaction_outcome.block_hash, 10))} · signer ${esc(t.transaction.signer_id)} · via ${esc(new URL(t.rpc).host)}</div>${txLink(it.hash, "open on nearblocks")}</div>`;
+        V.results[rule] = "ok";
+      } else if (failed) {
+        const f = failureText(failed.outcome.status.Failure);
+        out.innerHTML = `<div class="vres ok"><b>✓ Refused on-chain</b> · ${esc(f.kind)}<div class="mono" style="color:var(--ok);margin:4px 0">${esc(f.msg)}</div><div class="mono mute">receipt ${esc(shortHash(failed.id, 8))} executed by ${esc(failed.outcome.executor_id)} · block ${esc(shortHash(t.transaction_outcome.block_hash, 10))} · via ${esc(new URL(t.rpc).host)}</div>${txLink(it.hash, "open on nearblocks")}${t.transaction.receiver_id !== V.ev.contract ? `<div class="mute" style="font-size:11.5px;margin-top:4px">Sent as a meta transaction (signed by the agent's function-call key, relayed by ${esc(t.transaction.signer_id)}): the outer transaction succeeds, and the refusal is in this receipt.</div>` : `<div class="mute" style="font-size:11.5px;margin-top:4px">Direct call by ${esc(t.transaction.signer_id)} to the contract.</div>`}</div>`;
+        V.results[rule] = "refused";
+      } else {
+        out.innerHTML = `<div class="vres bad">✘ No failing receipt found in this transaction.</div>`; V.results[rule] = "unexpected";
+      }
+    } catch (e) {
+      out.innerHTML = `<div class="vres bad">Could not reach archival RPC (${esc(e.message)}). The recorded refusal was: <span class="mono">${esc(refusalMsg(it.error))}</span> · ${txLink(it.hash)}</div>`; V.results[rule] = "error";
+    }
+    btn.disabled = false; tally();
+  }
+  function tally() {
+    const v = Object.entries(V.results).filter(([k]) => k !== "RULING");
+    const ref = v.filter(([, s]) => s === "refused").length, onchain = (V.ev?.items || []).filter((i) => /^R-ROB/.test(i.step) && i.hash).length;
+    const el = $("#vtally"); if (el) el.innerHTML = v.length ? `${ref}/${onchain} on-chain attacks refused · fetched live from testnet${v.some(([, s]) => s === "error") ? " · some fetches failed (network)" : ""}` : "";
+  }
+
+  const COPY = (cmd) => `<div class="cmd"><code>${esc(cmd)}</code><button class="btn ghost" data-copy="${esc(cmd)}" aria-label="Copy command">Copy</button></div>`;
+  function vVerify() {
+    const ruleIds = Object.keys(ATTACK);
+    return pageHead("Judge path", "VERIFY IN 3 MINUTES", "Try to break a treaty, then check every claim against the chain. No wallet, no API key.").replace(modeBadge(), `<span class="mode-badge live">REAL TESTNET EVIDENCE</span>`) + `
+      <section class="panel" style="margin-bottom:var(--gap)"><header><h2>Do X → See Y</h2></header><div class="body"><ol class="steps">
+        <li><b>Click “Attempt all” below.</b> <span class="dim">See each recorded attack fetched live from NEAR testnet and refused: contract panics and runtime key refusals, each with its nearblocks link.</span></li>
+        <li><b>Click “Check the ruling”.</b> <span class="dim">See the dispute decided by three NEAR AI Cloud TEE judges succeed on-chain (CRITICAL_BREACH).</span></li>
+        <li><b>Open <a href="#/tribunal">Tribunal</a>.</b> <span class="dim">See the three real model votes, each judge's attested TEE signer, and every stage linked to its transaction.</span></li>
+        <li><b>Run the CLI below (optional, ~1 minute).</b> <span class="dim">See the full simulation re-run, every signature re-verified, and live contract state.</span></li>
+      </ol></div></section>
+      <section class="panel" style="margin-bottom:var(--gap)"><header><h2>Try to rob the treaty</h2><div class="filters"><span class="mono" id="vtally" style="color:var(--ok)"></span><button class="btn primary" id="vall">Attempt all</button></div></header>
+        <div class="body"><p class="dim" style="margin:0 0 14px">Each <b>Attempt</b> replays a real transaction already on testnet (contract <span class="mono">${esc(V.ev?.contract || S.contract)}</span>): it fetches that transaction from archival RPC right now and shows what the chain did. It does not send a new transaction.</p>
+        <div class="attacks">${ruleIds.map((r) => { const it = V.ev?.items.find((i) => i.step.startsWith(r + " ")); return `<article class="attack">
+          <div class="ah"><span class="rid">${r}</span>${it?.hash ? chip("ok", "on-chain", 1) : r === "R-ROB-9" ? chip("neutral", "unit test + sim") : chip("warn", "not on-chain")}</div>
+          <h3>${esc(ATTACK[r])}</h3>${it?.proves ? `<div class="dim" style="font-size:12.5px">Rule proven: ${esc(it.proves)}</div>` : ""}
+          ${CAVEAT[r] ? `<div class="mute" style="font-size:12px;margin-top:6px">⚠ ${esc(CAVEAT[r])}</div>` : ""}
+          ${TESTS[r] ? `<div class="mono mute" style="margin-top:6px">cargo test ${esc(TESTS[r].split(" · ")[0])}</div>` : `<div class="mono mute" style="margin-top:6px">enforced by the NEAR runtime (no contract code involved)</div>`}
+          <div style="margin-top:10px"><button class="btn" data-attempt="${r}">${it?.hash ? "Attempt (replay on-chain)" : "Why no transaction?"}</button></div>
+          <div id="vr-${r}"></div></article>`; }).join("")}</div></div></section>
+      <div class="grid g-2">
+        <section class="panel gold"><header><h2>Real TEE ruling</h2></header><div class="body"><p class="dim" style="margin-top:0">Dispute #1 was decided by DeepSeek V4.1, Qwen 3.8 and GLM 5.3, running in NEAR AI Cloud TEEs. The contract recovered all three signatures with <span class="mono">ecrecover</span>.</p><button class="btn" data-attempt="RULING">Check the ruling on-chain</button><div id="vr-RULING"></div><div style="margin-top:12px"><a href="#/tribunal">Open the ruling of record →</a></div></div></section>
+        <section class="panel"><header><h2>Evidence files</h2></header><div class="body"><ul class="links">
+          <li><a href="${REPO}/blob/main/RULES.md" target="_blank" rel="noopener">RULES.md</a> <span class="mute">· every R-ROB id and rule cited by code and tests</span></li>
+          <li><a href="${REPO}/blob/main/evidence/testnet-evidence.json" target="_blank" rel="noopener">evidence/testnet-evidence.json</a> <span class="mute">· deploy, enclaves, treaty #0, all attacks, ruling #0, Chain Signatures</span></li>
+          <li><a href="${REPO}/blob/main/evidence/testnet-real-judges.json" target="_blank" rel="noopener">evidence/testnet-real-judges.json</a> <span class="mute">· TEE judges, treaty #1, dispute #1, the 3 real votes</span></li>
+          <li><a href="${REPO}/tree/main/evidence/attestations" target="_blank" rel="noopener">evidence/attestations/</a> <span class="mute">· NEAR AI Cloud attestation reports per judge key</span></li>
+          <li><a href="${REPO}/blob/main/evidence/sim-evidence.json" target="_blank" rel="noopener">evidence/sim-evidence.json</a> <span class="mute">· <b>simulation</b>: signed votes + refusals for npm run verify</span></li>
+          <li>${acctLink(V.ev?.contract || S.contract)} <span class="mute">· the contract on nearblocks</span></li></ul></div></section></div>
+      <section class="panel" style="margin-top:var(--gap)"><header><h2>Verify from the command line</h2><span class="mono mute">git clone ${esc(REPO)}</span></header><div class="body grid">
+        <div>${COPY("cd pactum/offchain && npm install && npm run sim")}<div class="dim exp">Expect <span class="mono">rob attempts refused: 9/9</span>: the scripted lifecycle (<b>simulation</b>, no chain, no LLM).</div></div>
+        <div>${COPY("npm run verify")}<div class="dim exp">Expect <span class="mono">all checks passed</span>: every simulated judge signature re-recovered, every quorum recomputed.</div></div>
+        <div>${COPY("npm run status -- --chain")}<div class="dim exp">Expect live tables from <span class="mono">${esc(V.ev?.contract || S.contract)}</span>: 3 enclaves, 2 closed treaties, 2 CRITICAL_BREACH rulings. Plain <span class="mono">npm run status</span> shows the simulation snapshot.</div></div>
+        <div>${COPY("npm test")}<div class="dim exp">Expect <span class="mono">pass 7</span>, including a TS-signed vote that the Rust contract fixture accepts.</div></div>
+        <div>${COPY("cd ../contract && cargo test")}<div class="dim exp">Expect <span class="mono">24 passed</span>: each contract-level R-ROB refusal by name (Linux, macOS or WSL).</div></div>
+        <div>${COPY("npm run nearai:check")}<div class="dim exp">Needs a NEAR AI key. Expect <span class="mono">3/3 models</span>: TEE signature recovers to the attested signing address.</div></div>
+      </div></section>`;
+  }
+  async function verifyMount() {
+    try {
+      V.ev ||= await (await fetch("data/testnet-evidence.json")).json();
+      V.judges ||= await (await fetch("data/testnet-real-judges.json")).json().catch(() => null);
+    } catch (e) { $("#main").insertAdjacentHTML("afterbegin", `<div class="notice err">Could not load evidence: ${esc(e.message)}</div>`); return; }
+    $("#main").innerHTML = vVerify();
+    $$("[data-attempt]").forEach((b) => (b.onclick = () => attempt(b.dataset.attempt)));
+    $("#vall").onclick = async () => { $("#vall").disabled = true; for (const r of Object.keys(ATTACK)) await attempt(r); $("#vall").disabled = false; };
+    $$("[data-copy]").forEach((b) => (b.onclick = async () => { try { await navigator.clipboard.writeText(b.dataset.copy); b.textContent = "Copied"; } catch { b.textContent = "Select & copy"; } setTimeout(() => (b.textContent = "Copy"), 1500); }));
+    tally();
+  }
+
   // ---------------------------------------------------------------- router
-  const VIEWS = { command: vCommand, diplomacy: vDiplomacy, enclaves: vEnclaves, treaties: vTreaties, tribunal: vTribunal, simulation: vSimulation, events: vEvents };
+  const VIEWS = { verify: vVerify, command: vCommand, diplomacy: vDiplomacy, enclaves: vEnclaves, treaties: vTreaties, tribunal: vTribunal, simulation: vSimulation, events: vEvents };
   function route() { const h = location.hash.replace(/^#\/?/, ""); return h.split(/[?#]/)[0]; }
   function render() {
     const r = route();
@@ -630,7 +756,7 @@
       return;
     }
     if (r !== "simulation" && sim.timer) simPause();
-    const inner = r === "simulation" ? vSimulation() : S.loading ? loadingView() : S.error ? errorView() : VIEWS[r]();
+    const inner = r === "verify" ? loadingView() : r === "simulation" ? vSimulation() : S.loading ? loadingView() : S.error ? errorView() : VIEWS[r]();
     root.innerHTML = shell(r, inner);
     document.title = `Pactum · ${NAV.find((n) => n[0] === r)[1]}`;
     $$("[data-mode]").forEach((b) => (b.onclick = () => b.dataset.mode !== S.mode && setMode(b.dataset.mode)));
@@ -638,6 +764,7 @@
     $$("#sidebar a").forEach((a) => a.addEventListener("click", () => $("#sidebar").classList.remove("open")));
     $("#retry")?.addEventListener("click", load);
     if (r === "simulation") return simMount();
+    if (r === "verify") return verifyMount();
     if (S.loading || S.error) return;
     bindRefs($("#main"));
     if ($("#topo")) topology($("#topo"));

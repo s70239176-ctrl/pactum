@@ -1,5 +1,5 @@
 {
-  "generated": "2026-11-13T01:25:44.379Z",
+  "generated": "2026-11-13T01:44:45.462Z",
   "mode": "simulation",
   "contract": "pactum.sim.testnet",
   "timeline": [
@@ -288,9 +288,9 @@
         "treaty_id": 0,
         "plaintiff": "atlas.pactum.sim.testnet",
         "defendant": "meridian.pactum.sim.testnet",
-        "evidence_sha256": "a1db4e32eb5be2b80d8e9ce5728ada6378a4e1c7defc610716a54088b958d2eb"
+        "evidence_sha256": "edae56bb071862f996f67af35353b5e5af85683e73519e502230a0ea38383d52"
       },
-      "text": "atlas files dispute #0 vs meridian: \"Meridian's oracle was down for most of epoch 812; our vault could not liquidate.\" (evidence sha256 a1db4e32eb5b..., bond 0.5 NEAR)"
+      "text": "atlas files dispute #0 vs meridian: \"Meridian's oracle was down for most of epoch 812; our vault could not liquidate.\" (evidence sha256 edae56bb0718..., bond 0.5 NEAR)"
     },
     {
       "t": 29,
@@ -300,8 +300,8 @@
       "verdict": "CRITICAL_BREACH",
       "metric_bps": 3843,
       "mode": "simulation",
-      "signature": "0x98382c0c7768b0e7...",
-      "text": "Justice Halvard [simulation] -> CRITICAL_BREACH (3843 bps), TEE sig 0x98382c0c7768..."
+      "signature": "0x10a07f3140576046...",
+      "text": "Justice Halvard [simulation] -> CRITICAL_BREACH (3843 bps), TEE sig 0x10a07f314057..."
     },
     {
       "t": 30,
@@ -311,8 +311,8 @@
       "verdict": "CRITICAL_BREACH",
       "metric_bps": 3843,
       "mode": "simulation",
-      "signature": "0xe960829581a26c9e...",
-      "text": "Arbiter Okonkwo [simulation] -> CRITICAL_BREACH (3843 bps), TEE sig 0xe960829581a2..."
+      "signature": "0x6957cc93e807c348...",
+      "text": "Arbiter Okonkwo [simulation] -> CRITICAL_BREACH (3843 bps), TEE sig 0x6957cc93e807..."
     },
     {
       "t": 31,
@@ -322,8 +322,8 @@
       "verdict": "CRITICAL_BREACH",
       "metric_bps": 3843,
       "mode": "simulation",
-      "signature": "0x3c118edfd401ae12...",
-      "text": "Skeptic Varga [simulation] -> CRITICAL_BREACH (3843 bps), TEE sig 0x3c118edfd401..."
+      "signature": "0x153be4ae52492066...",
+      "text": "Skeptic Varga [simulation] -> CRITICAL_BREACH (3843 bps), TEE sig 0x153be4ae5249..."
     },
     {
       "t": 32,
@@ -384,9 +384,9 @@
         "treaty_id": 1,
         "plaintiff": "corvid.pactum.sim.testnet",
         "defendant": "lyra.pactum.sim.testnet",
-        "evidence_sha256": "347e1cfd06d3d492ce378e5cde02143fc1e52d09cd7ecbdccdcdcdf66d5df460"
+        "evidence_sha256": "e06b6283d6eb511396673f38c89b4a1f78c135a59688bf07d97d9593352e6a51"
       },
-      "text": "corvid files dispute #1 vs lyra: \"Lyra refused a valid claim.\" (evidence sha256 347e1cfd06d3..., bond 0.5 NEAR)"
+      "text": "corvid files dispute #1 vs lyra: \"Lyra refused a valid claim.\" (evidence sha256 e06b6283d6eb..., bond 0.5 NEAR)"
     },
     {
       "t": 38,
@@ -396,8 +396,8 @@
       "verdict": "MALICIOUS_REPORT",
       "metric_bps": 0,
       "mode": "simulation",
-      "signature": "0x7990bfd32d780f3d...",
-      "text": "Justice Halvard [simulation] -> MALICIOUS_REPORT (0 bps), TEE sig 0x7990bfd32d78..."
+      "signature": "0xecd23b7d773f894f...",
+      "text": "Justice Halvard [simulation] -> MALICIOUS_REPORT (0 bps), TEE sig 0xecd23b7d773f..."
     },
     {
       "t": 39,
@@ -407,8 +407,8 @@
       "verdict": "MALICIOUS_REPORT",
       "metric_bps": 0,
       "mode": "simulation",
-      "signature": "0x65d3b70c64dcf95e...",
-      "text": "Arbiter Okonkwo [simulation] -> MALICIOUS_REPORT (0 bps), TEE sig 0x65d3b70c64dc..."
+      "signature": "0x4d3cbf75e6966080...",
+      "text": "Arbiter Okonkwo [simulation] -> MALICIOUS_REPORT (0 bps), TEE sig 0x4d3cbf75e696..."
     },
     {
       "t": 40,
@@ -418,8 +418,8 @@
       "verdict": "MALICIOUS_REPORT",
       "metric_bps": 0,
       "mode": "simulation",
-      "signature": "0x3276e7e88f5b096b...",
-      "text": "Skeptic Varga [simulation] -> MALICIOUS_REPORT (0 bps), TEE sig 0x3276e7e88f5b..."
+      "signature": "0x48812efaf9767421...",
+      "text": "Skeptic Varga [simulation] -> MALICIOUS_REPORT (0 bps), TEE sig 0x48812efaf976..."
     },
     {
       "t": 41,
@@ -452,9 +452,9 @@
         "treaty_id": 2,
         "plaintiff": "lyra.pactum.sim.testnet",
         "defendant": "corvid.pactum.sim.testnet",
-        "evidence_sha256": "b6bd67596c0a28b30c0ba44f95079054725ebea2bc08a00f4b132f0f11fffec7"
+        "evidence_sha256": "6d419771c0ad77b9ae8feb4965436ff8d2383ebaaf2db0049ef0b04268305ad4"
       },
-      "text": "lyra files dispute #2 vs corvid: \"Corvid pulled its quotes during congestion.\" (evidence sha256 b6bd67596c0a..., bond 0.5 NEAR)"
+      "text": "lyra files dispute #2 vs corvid: \"Corvid pulled its quotes during congestion.\" (evidence sha256 6d419771c0ad..., bond 0.5 NEAR)"
     },
     {
       "t": 44,
@@ -464,8 +464,8 @@
       "verdict": "FEED_CONFLICT",
       "metric_bps": 0,
       "mode": "simulation",
-      "signature": "0xb861b60190134ca5...",
-      "text": "Justice Halvard [simulation] -> FEED_CONFLICT (0 bps), TEE sig 0xb861b6019013..."
+      "signature": "0x42bb5e32cfdc8b7f...",
+      "text": "Justice Halvard [simulation] -> FEED_CONFLICT (0 bps), TEE sig 0x42bb5e32cfdc..."
     },
     {
       "t": 45,
@@ -475,8 +475,8 @@
       "verdict": "FEED_CONFLICT",
       "metric_bps": 0,
       "mode": "simulation",
-      "signature": "0x131620971a74ffb2...",
-      "text": "Arbiter Okonkwo [simulation] -> FEED_CONFLICT (0 bps), TEE sig 0x131620971a74..."
+      "signature": "0xd9d697dfac78adf6...",
+      "text": "Arbiter Okonkwo [simulation] -> FEED_CONFLICT (0 bps), TEE sig 0xd9d697dfac78..."
     },
     {
       "t": 46,
@@ -486,8 +486,8 @@
       "verdict": "FEED_CONFLICT",
       "metric_bps": 0,
       "mode": "simulation",
-      "signature": "0x2c0727c1d5dc1304...",
-      "text": "Skeptic Varga [simulation] -> FEED_CONFLICT (0 bps), TEE sig 0x2c0727c1d5dc..."
+      "signature": "0x5d9470d8260ab395...",
+      "text": "Skeptic Varga [simulation] -> FEED_CONFLICT (0 bps), TEE sig 0x5d9470d8260a..."
     },
     {
       "t": 47,

@@ -16,7 +16,8 @@
     "testnet": "node src/testnet.ts",
     "fixture": "node src/fixture.ts",
     "nearai:check": "node src/nearai-check.ts",
-    "testnet:judges": "node src/testnet-judges.ts"
+    "testnet:judges": "node src/testnet-judges.ts",
+    "audit:evidence": "node src/audit-evidence.ts"
   },
   "dependencies": {
     "@noble/curves": "2.4.0",

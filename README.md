@@ -13,7 +13,17 @@ Design: [ARCHITECTURE.md](ARCHITECTURE.md) · Rules the code enforces: [RULES.md
 
 ## Do X → See Y (under 3 minutes, no wallet, no API key)
 
-Requires Node ≥ 22.18. Rust is only needed for step 6.
+### Fastest: in the browser (about 1 minute)
+
+| # | Do | See |
+|---|---|---|
+| A | Open **https://pactum-int.vercel.app/#/verify** and click **Attempt all** | Each recorded attack (R-ROB-1 … R-ROB-10) is fetched **live** from NEAR testnet (archival RPC) and shown refused, with the chain's own reason: contract panics such as `insufficient free collateral`, and runtime key refusals such as `MethodNameMismatch {set_quorum}`. The tally reads **8/8 on-chain attacks refused**. R-ROB-8 and R-ROB-9 explain why they have no transaction |
+| B | On the same page, click **Check the ruling on-chain** | The dispute decided by three NEAR AI Cloud TEE judges returns `"CriticalBreach"` from the chain |
+| C | Open **Tribunal** | The three real model votes, each judge's attested TEE signer, and every adjudication stage linked to its transaction |
+
+### Full: on the command line
+
+Requires Node ≥ 22.18. Rust is only needed for step 6. Steps 2–4 and 7 are **simulation** (no chain, no LLM); step 8 checks the real testnet record.
 
 | # | Do | See |
 |---|---|---|
@@ -21,9 +31,10 @@ Requires Node ≥ 22.18. Rust is only needed for step 6.
 | 2 | `npm run sim` | The full lifecycle in about 2 s. **4 enclaves** are created with function-call keys; **3 treaties** are negotiated and escrowed; **9 rob attempts** each print `REFUSED: <reason>`; **3 disputes** are each judged by 3 TEE-format signatures; rulings are `CRITICAL_BREACH`, `MALICIOUS_REPORT` and `FEED_CONFLICT`; a 6 NEAR payout is queued for **Base** through Chain Signatures; the run ends with `rob attempts refused: 9/9` |
 | 3 | `npm run verify` | Every judge signature is independently re-recovered to its signer address, each quorum is recomputed and matches the recorded ruling, and each refusal is listed. Ends with `all checks passed` |
 | 4 | `npm run status` | Tables of enclaves (free / escrow / trust / frozen), treaties with escrow, and disputes with rulings |
-| 5 | `node ../scripts/serve.mjs`, then open http://localhost:5173 (or https://pactum-int.vercel.app) | The landing page, then **Enter command**: live testnet metrics, network topology, treaty registry, tribunal ruling record, event history. Use **Simulations** → **Jump to end** for the replayed run (9/9 attacks blocked) |
+| 5 | `node ../scripts/serve.mjs`, then open http://localhost:5173 (or https://pactum-int.vercel.app) | The landing page. **Verify in 3 minutes** leads to the on-chain attack console. **Enter command** shows live testnet metrics, network topology, treaty registry, tribunal ruling record and event history. **Simulations** → **Jump to end** replays the scripted run (**simulation**: 9/9 attacks blocked) |
 | 6 | `cd ../contract && cargo test` (Linux, macOS or WSL) | `24 passed`. This includes every contract-level `R-ROB-*` refusal, the full lifecycle, and `ts_signed_vote_verifies_on_chain`: a vote signed by the TypeScript judge is accepted by the Rust contract |
 | 7 | `cd ../offchain && npm test` | `pass 7`, including the known-answer check that key `0x01…01` maps to address `0x1a642f…14f1` |
+| 8 | `npm run audit:evidence` | Every testnet transaction cited in this README (32) is fetched from archival RPC, and its on-chain outcome and refusal reason are checked against the claim, plus the live contract state. Ends with `all cited transactions match their claims on-chain` |
 
 All of this runs in **simulation mode** (RULES D-9): scripted agents, and judges that sign with local keys in **exactly** the wire format NEAR AI Cloud uses. Every simulated artifact is labeled `simulation`.
 
@@ -78,7 +89,9 @@ Wasm built with `cargo near build` (326,258 bytes, sha256 `2b252d2d490215648e369
 | `submit_verdicts` | `ecrecover` of 3 signatures on-chain → **CRITICAL_BREACH** (3843 bps); meridian's 0.3 NEAR bond slashed | ✔ | [CM3uVtxs…](https://testnet.nearblocks.io/txns/CM3uVtxsuAHsuny8ePSuwHqfkXPXioNGQLjneDkMjAPu) |
 | Chain Signatures `sign()` | MPC network returned a secp256k1 signature for the Base payout, path `pactum/atlas.pactum.stunner70.testnet/0` (payout status `Signed`) | ✔ | [AiQrTbnh…](https://testnet.nearblocks.io/txns/AiQrTbnhA5BQyBuFaA6P3oZqMJRKx7XF38Q2AUdrDtfs) |
 
-Final state: `audit()` → liabilities 1.5 NEAR, `solvent: true`. Treaty #0 `Closed`, dispute #0 `Resolved`.
+State after this run: treaty #0 `Closed`, dispute #0 `Resolved`. Payout #0 (0.3 NEAR to Base) is `Signed` by the MPC network but not broadcast to Base (see Real vs. simulated).
+
+**How to read the refusal links:** R-ROB-1, 2, 3, 4, 7 and 10 were sent as **meta transactions**. On nearblocks the relayer's outer transaction shows as successful, and the refusal is in the **receipt** executed by the contract or by the agent's account. R-ROB-5 and 6 are direct calls whose contract receipt fails. `npm run audit:evidence` and the site's **Verify** page both read the failing receipt.
 
 ¹ The treaty was already ACTIVE, so the contract refused at the state check before reaching the terms-hash check. The terms-hash refusal itself is covered by `rob7_ratify_altered_terms` in `cargo test` and by the sim.
 ² The script sent this one as a direct transaction from mallory's account, which only holds 0.1 NEAR, so the client refused it for insufficient balance. That's a script bug, not an on-chain refusal. The owner-only check is covered by `rob8_outsider_cannot_admin` in `cargo test`. Next run: send it as a meta-transaction.
@@ -99,7 +112,7 @@ Three models hosted by NEAR AI Cloud inside TEEs (Intel TDX + NVIDIA confidentia
 | Deactivate simulated judges 0–2 | from here on only TEE-attested keys can reach quorum | [7ypT4CbG…](https://testnet.nearblocks.io/txns/7ypT4CbG9LQSTYHZ2FGQhmnx4nVYi3iP5aouyV9hEKhc) · [5pGt7ko5…](https://testnet.nearblocks.io/txns/5pGt7ko5XbpbXnPCfkdXgwD3RqHRrcrWpJBXyidRET9C) · [7EVAvxZ2…](https://testnet.nearblocks.io/txns/7EVAvxZ21zDPri3soQ3mJPbxtXE1zFz6C5k1RVVanHn7) |
 | Treaty #1 propose / ratify (meta-tx) | 0.1 + 0.1 NEAR escrowed | [DT3x6r9H…](https://testnet.nearblocks.io/txns/DT3x6r9Hjo7qQP94mJHf7fYsweA7EYXh63M9aqfeLHwK) · [5HWUpDPg…](https://testnet.nearblocks.io/txns/5HWUpDPge7cEmqo8iFcXnowE2ZY1hr85vXnoHvuvJxwx) |
 | `file_dispute` #1 (meta-tx) | evidence sha256 committed | [2jiQyjsd…](https://testnet.nearblocks.io/txns/2jiQyjsdaPVPvn7j7cG2YmCfBEkzsm3876PEB3QxHn2U) |
-| **`submit_verdicts`** | 3/3 NEAR AI Cloud TEE signatures recovered on-chain → **CRITICAL_BREACH** (2840 bps); meridian's bond slashed | [**8FhCBXup…**](https://testnet.nearblocks.io/txns/8FhCBXupX4Y67QoybF3vsmQx95uPotEE9cP5iuBRx2BD) |
+| **`submit_verdicts`** | 3/3 NEAR AI Cloud TEE signatures recovered on-chain → **CRITICAL_BREACH** (2840 bps); meridian's 0.1 NEAR bond slashed into payout #1 (to Base, `Pending`: no MPC signature requested for it yet) | [**8FhCBXup…**](https://testnet.nearblocks.io/txns/8FhCBXupX4Y67QoybF3vsmQx95uPotEE9cP5iuBRx2BD) |
 
 Notes:
 - A model can be served by several TEE nodes, each with its own attested key. A second Qwen node (judge 6, `0x979121…3474`) was registered with its own attestation report ([7rsQzhfe…](https://testnet.nearblocks.io/txns/7rsQzhfeLTjPZmKNGcmAeXd6s2yvM6AMRuvUMychJiL3)) but did not vote. The script now registers a node only after an attestation report names exactly the key that signed a vote. A follow-up should group a model's node keys under one judge, so a model can never fill two quorum seats.
@@ -137,7 +150,7 @@ Keys live only in `.env`, which is git-ignored. Agents only ever hold function-c
 
 - **Real and tested:** the contract (24 tests); on-chain `ecrecover` of TEE-format signatures; quorum, clamp and settlement; enclave sub-account creation with function-call keys; the escrow ledger and the solvency `audit()` view; the Chain Signatures `sign` request; the evidence hash and feed checks; and the TS ↔ Rust signature compatibility.
 - **Simulated in `npm run sim`:** the judges (local keys, scripted reasoning); the ledger (a TypeScript mirror of the contract with the same refusal strings); and the runtime refusals for function-call keys (R-ROB-2/3). These become real on-chain refusals in `npm run testnet`.
-- **Real on testnet (2026-11-13):** deployment, enclave sub-accounts, meta-tx treaty, 9 on-chain refusals with tx hashes, on-chain ruling, and an MPC signature from Chain Signatures (see Live evidence).
+- **Real on testnet (2026-11-13):** deployment, enclave sub-accounts, meta-tx treaty, 8 attacks refused on-chain with tx hashes (R-ROB-8 was refused by the client before reaching the chain; R-ROB-9 is covered only by the unit test and the simulation), on-chain ruling, and an MPC signature from Chain Signatures (see Live evidence).
 - **Real NEAR AI Cloud judges** decided dispute #1 on testnet (see above).
 - **Not yet done:** a mainnet Intents deposit (needs a yes per transaction), and building and broadcasting the destination-chain transaction after the MPC signs (the payload is currently a hash of the canonical payout).
 
