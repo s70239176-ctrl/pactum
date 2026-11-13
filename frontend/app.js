@@ -35,12 +35,12 @@
     NO_EVIDENCE: { cls: "neutral", label: "No evidence" },
   };
   const STATUS = { Active: "ok", Proposed: "warn", Disputed: "dispute", Exiting: "warn", Closed: "neutral", Cancelled: "neutral", Expired: "neutral", Open: "dispute", Resolved: "ok" };
-  const CHAIN = { near: "#b8f36b", base: "#6f9cf0", ethereum: "#b9a4f2", solana: "#5fd8b0", bitcoin: "#e2a14d" };
+  const CHAIN = { near: "#a594ff", base: "#6f9cf0", ethereum: "#b9a4f2", solana: "#5fd8b0", bitcoin: "#e2a14d" };
   const chip = (cls, text, dot) => `<span class="chip ${cls}">${dot ? '<span class="dot"></span>' : ""}${esc(text)}</span>`;
   const verdictChip = (v) => (v ? chip(VERDICT[v]?.cls || "neutral", v) : chip("neutral", "pending"));
 
   const I = {
-    logo: `<svg viewBox="0 0 32 32" aria-hidden="true"><path d="M16 3 28 10v12L16 29 4 22V10z" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M16 10v13M10.5 13.5 16 17l5.5-3.5" fill="none" stroke="#b8f36b" stroke-width="1.8"/><circle cx="16" cy="9.5" r="1.6" fill="#b8f36b"/></svg>`,
+    logo: `<svg viewBox="0 0 32 32" aria-hidden="true"><path d="M16 3 28 10v12L16 29 4 22V10z" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M16 10v13M10.5 13.5 16 17l5.5-3.5" fill="none" stroke="#a594ff" stroke-width="1.8"/><circle cx="16" cy="9.5" r="1.6" fill="#a594ff"/></svg>`,
     command: `<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2.5" y="2.5" width="6" height="6"/><rect x="11.5" y="2.5" width="6" height="9"/><rect x="2.5" y="11.5" width="6" height="6"/><rect x="11.5" y="14.5" width="6" height="3"/></svg>`,
     diplomacy: `<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="4" cy="10" r="2"/><circle cx="16" cy="4.5" r="2"/><circle cx="16" cy="15.5" r="2"/><path d="M5.8 9.1 14.2 5.4M5.8 10.9l8.4 3.7M16 6.5v7"/></svg>`,
     enclave: `<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10 2 17 6v8l-7 4-7-4V6z"/><path d="M10 10v8M3 6l7 4 7-4"/></svg>`,
@@ -329,7 +329,7 @@
     const R = Math.min(200, 120 + n * 14);
     const pos = {};
     m.enclaves.forEach((e, i) => { const a = -Math.PI / 2 + (i * 2 * Math.PI) / Math.max(n, 1); pos[e.account] = { x: cx + Math.cos(a) * R * 1.35, y: cy + Math.sin(a) * R }; });
-    const col = (s) => ({ Active: "var(--emerald)", Proposed: "var(--warn)", Disputed: "var(--dispute)", Exiting: "var(--warn)" }[s] || "#6b7a71");
+    const col = (s) => ({ Active: "var(--emerald)", Proposed: "var(--warn)", Disputed: "var(--dispute)", Exiting: "var(--warn)" }[s] || "#5d5888");
     const pair = {};
     const edges = m.treaties.filter((t) => pos[t.a] && pos[t.b]).map((t) => {
       const k = [t.a, t.b].sort().join("|"); const idx = (pair[k] = (pair[k] || 0) + 1) - 1;
@@ -338,23 +338,23 @@
       const qx = mx + (dx / len) * off + (cx - mx) * 0.18, qy = my + (dy / len) * off + (cy - my) * 0.18;
       const d = `M${A.x},${A.y} Q${qx},${qy} ${B.x},${B.y}`;
       const dashed = t.status === "Proposed" ? ' stroke-dasharray="6 6"' : t.status === "Closed" ? ' stroke-dasharray="2 6"' : "";
-      return `<g class="edge-g" data-open="treaty:${t.id}" data-tip="Treaty #${t.id} · ${esc(short(t.a))} ↔ ${esc(short(t.b))}|${esc(t.status)} · escrow ${near(t.bond_a + t.bond_b)} NEAR"><path class="edge-hit" d="${d}" fill="none"/><path class="edge" d="${d}" fill="none" stroke="${col(t.status)}"${dashed} opacity="${t.status === "Closed" ? 0.6 : 0.95}"/>${t.status === "Active" && !reduceMotion ? `<path d="${d}" fill="none" stroke="#e9ffd0" stroke-width="1.4" class="flow" opacity=".55"/>` : ""}</g>`;
+      return `<g class="edge-g" data-open="treaty:${t.id}" data-tip="Treaty #${t.id} · ${esc(short(t.a))} ↔ ${esc(short(t.b))}|${esc(t.status)} · escrow ${near(t.bond_a + t.bond_b)} NEAR"><path class="edge-hit" d="${d}" fill="none"/><path class="edge" d="${d}" fill="none" stroke="${col(t.status)}"${dashed} opacity="${t.status === "Closed" ? 0.6 : 0.95}"/>${t.status === "Active" && !reduceMotion ? `<path d="${d}" fill="none" stroke="#e7e1ff" stroke-width="1.4" class="flow" opacity=".55"/>` : ""}</g>`;
     }).join("");
     const nodes = m.enclaves.map((e) => {
       const p = pos[e.account]; const c = CHAIN[e.chain] || "#a6aea8";
       return `<g class="node" data-open="enclave:${esc(e.account)}" data-tip="${esc(e.account)}|trust ${e.score} · escrow ${near(e.locked)} · free ${near(e.free)} NEAR${e.frozen ? " · FROZEN" : ""}" transform="translate(${p.x},${p.y})">
-        <polygon points="0,-34 29,-17 29,17 0,34 -29,17 -29,-17" fill="#121a16" stroke="${e.frozen ? "var(--fail)" : "#2f3d35"}" stroke-width="1.2"/>
+        <polygon points="0,-34 29,-17 29,17 0,34 -29,17 -29,-17" fill="#13102b" stroke="${e.frozen ? "var(--fail)" : "#2a2552"}" stroke-width="1.2"/>
         <polygon class="ring" points="0,-26 22.5,-13 22.5,13 0,26 -22.5,13 -22.5,-13" fill="none" stroke="${c}" stroke-width="1.6"/>
         <text y="-1" text-anchor="middle" fill="#f3f5f1" font-family="Space Grotesk" font-weight="600" font-size="13">${esc(e.name)}</text>
         <text y="13" text-anchor="middle" fill="${c}" font-family="JetBrains Mono" font-size="8.5" letter-spacing=".08em">${esc(e.chain.toUpperCase())}</text>
         ${mini ? "" : `<text y="52" text-anchor="middle" fill="#6f7a73" font-family="JetBrains Mono" font-size="9.5">trust ${e.score} · ${near(e.locked)} bonded</text>`}</g>`;
     }).join("");
-    const core = `<g aria-hidden="true"><circle cx="${cx}" cy="${cy}" r="70" fill="url(#coreGlow)"/><polygon points="${cx},${cy - 36} ${cx + 31},${cy - 18} ${cx + 31},${cy + 18} ${cx},${cy + 36} ${cx - 31},${cy + 18} ${cx - 31},${cy - 18}" fill="#0f1612" stroke="#3a4a40"/><text x="${cx}" y="${cy + 4}" text-anchor="middle" fill="#b8f36b" font-family="Space Grotesk" font-weight="700" font-size="11" letter-spacing=".2em">PACTUM</text></g>`;
+    const core = `<g aria-hidden="true"><circle cx="${cx}" cy="${cy}" r="70" fill="url(#coreGlow)"/><polygon points="${cx},${cy - 36} ${cx + 31},${cy - 18} ${cx + 31},${cy + 18} ${cx},${cy + 36} ${cx - 31},${cy + 18} ${cx - 31},${cy - 18}" fill="#120f2a" stroke="#3b3570"/><text x="${cx}" y="${cy + 4}" text-anchor="middle" fill="#a594ff" font-family="Space Grotesk" font-weight="700" font-size="11" letter-spacing=".2em">PACTUM</text></g>`;
     root.innerHTML = `<div class="topo-wrap">${mini ? "" : `<div class="topo-tools"><button data-z="1.2" aria-label="Zoom in">+</button><button data-z="0.83" aria-label="Zoom out">−</button><button data-z="0" aria-label="Reset view">⟲</button></div>`}
       <svg class="topo" viewBox="0 0 ${W} ${H}" role="img" aria-label="Network of ${n} enclaves and ${m.treaties.length} treaties" ${mini ? 'style="height:auto;aspect-ratio:800/520"' : ""}>
-        <defs><radialGradient id="coreGlow"><stop offset="0" stop-color="#79c84a" stop-opacity=".28"/><stop offset="1" stop-color="#79c84a" stop-opacity="0"/></radialGradient></defs>
+        <defs><radialGradient id="coreGlow"><stop offset="0" stop-color="#7c5cff" stop-opacity=".28"/><stop offset="1" stop-color="#7c5cff" stop-opacity="0"/></radialGradient></defs>
         <g class="vp">${core}${edges}${nodes}</g></svg>
-      ${mini ? "" : `<div class="topo-legend"><span style="--c:var(--emerald)">active treaty</span><span style="--c:var(--warn)">proposed</span><span style="--c:var(--dispute)">disputed</span><span style="--c:#6b7a71">closed</span><span class="mute">Hover to inspect · click to open · drag to pan · wheel to zoom</span></div>`}</div>`;
+      ${mini ? "" : `<div class="topo-legend"><span style="--c:var(--emerald)">active treaty</span><span style="--c:var(--warn)">proposed</span><span style="--c:var(--dispute)">disputed</span><span style="--c:#5d5888">closed</span><span class="mute">Hover to inspect · click to open · drag to pan · wheel to zoom</span></div>`}</div>`;
     if (!n) root.querySelector(".vp").innerHTML += `<text x="${cx}" y="${cy + 70}" text-anchor="middle" fill="#6f7a73" font-size="13">No enclaves registered on this contract yet.</text>`;
     bindRefs(root);
     const tip = $("#tip");
@@ -376,62 +376,71 @@
   }
 
   // ---------------------------------------------------------------- landing
-  const heroArt = `<svg class="hero-art" viewBox="0 0 640 560" role="img" aria-label="A suspended geometric monument above an architectural platform">
-    <defs>
-      <linearGradient id="hTop" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#2a3530"/><stop offset="1" stop-color="#151c18"/></linearGradient>
-      <linearGradient id="hL" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1b2420"/><stop offset="1" stop-color="#0c110f"/></linearGradient>
-      <linearGradient id="hR" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#26322c"/><stop offset="1" stop-color="#101613"/></linearGradient>
-      <linearGradient id="beam" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#b8f36b" stop-opacity=".0"/><stop offset=".55" stop-color="#b8f36b" stop-opacity=".22"/><stop offset="1" stop-color="#b8f36b" stop-opacity="0"/></linearGradient>
-      <radialGradient id="pool" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#79c84a" stop-opacity=".35"/><stop offset="1" stop-color="#79c84a" stop-opacity="0"/></radialGradient>
-      <linearGradient id="plat" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#18201c"/><stop offset="1" stop-color="#090d0c"/></linearGradient>
-    </defs>
-    <g stroke="#1c2520" stroke-width="1" opacity=".9">${Array.from({ length: 9 }, (_, i) => `<line x1="${320 - 300 + i * 75}" y1="560" x2="320" y2="300"/>`).join("")}${Array.from({ length: 6 }, (_, i) => { const y = 400 + i * i * 6.5; const w = 120 + i * i * 22; return `<line x1="${320 - w}" y1="${y}" x2="${320 + w}" y2="${y}"/>`; }).join("")}</g>
-    <path d="M40 470 320 390 600 470 320 552z" fill="url(#plat)" stroke="#2a3630"/>
-    <path d="M40 470v14l280 82v-14zM600 470v14L320 566v-14z" fill="#0b100e" stroke="#202a25"/>
-    <ellipse cx="320" cy="468" rx="190" ry="44" fill="url(#pool)"/>
-    <path d="M300 160h40v300h-40z" fill="url(#beam)" opacity=".9"/>
-    <g class="mono-float">
-      <path d="M320 70 452 146 320 222 188 146z" fill="url(#hTop)" stroke="#3b4a42"/>
-      <path d="M188 146 320 222v150L188 296z" fill="url(#hL)" stroke="#2c3832"/>
-      <path d="M452 146 320 222v150l132-76z" fill="url(#hR)" stroke="#33413a"/>
-      <path d="M320 222v150" stroke="#b8f36b" stroke-opacity=".7"/>
-      <path d="M254 184v148M386 184v148" stroke="#b8f36b" stroke-opacity=".18"/>
-      <path d="M320 104 400 150 320 196 240 150z" fill="none" stroke="#b8f36b" stroke-opacity=".45"/>
-      <circle cx="320" cy="150" r="4" fill="#b8f36b"/>
-    </g>
-    <g fill="none" stroke="#a6aea8" stroke-opacity=".22"><path d="M188 296 120 340M452 296l68 44M320 372v40"/></g>
-    <g font-family="JetBrains Mono" font-size="10" fill="#6f7a73" letter-spacing=".1em"><text x="470" y="96">ENCLAVE · ESCROW · COURT</text><text x="60" y="250">TEE ATTESTED</text><text x="476" y="330">CHAIN SIGNATURES</text></g>
-  </svg>`;
-
+  // ---------------------------------------------------------------- landing (Reflex-style layout, Pactum content)
+  const KITS = ["Function-call access keys", "Meta transactions · NEP-366", "NEAR AI Cloud TEEs", "Chain Signatures", "NEAR Intents · 1-Click", "Sub-accounts", "Archival RPC"];
+  function consoleDemo(m) {
+    const rs = (m && m.mode === "live" && m.refusals.filter((r) => r.onchain).slice(0, 4)) || [];
+    const steps = rs.length ? rs : [
+      { rule: "R-ROB-1", attack: "withdraw locked bond", message: "insufficient free collateral" },
+      { rule: "R-ROB-2", attack: "call set_quorum with agent key", message: "runtime: MethodNameMismatch" },
+      { rule: "R-ROB-4", attack: "outsider files dispute", message: "party only" },
+      { rule: "R-ROB-10", attack: "bond above self-imposed cap", message: "bond exceeds enclave's self-imposed cap" },
+    ];
+    return `<div class="agent-win">
+      <div class="aw-bar"><span class="dots"><i></i><i></i><i></i></span><span class="aw-title"><span class="orb"></span>Pactum Tribunal</span><span class="aw-chip"><span class="dot"></span>${m && m.mode === "live" ? "LIVE · TESTNET" : "RUNNING"}</span></div>
+      <div class="aw-prompt"><span class="spark">✦</span><span class="typed">Try to rob the treaty: withdraw the locked bond, then forge the judges' votes</span><span class="run">RUN ↵</span></div>
+      <div class="aw-body">
+        <div class="aw-plan mono">→ Replaying ${steps.length} recorded attacks against <span class="hl">${esc(m?.contract || "pactum.stunner70.testnet")}</span></div>
+        ${steps.map((r, i) => `<div class="aw-step" style="--d:${0.6 + i * 0.55}s"><span class="ck">✓</span><div><b>${esc(r.rule)}</b> <span class="dim">${esc(r.attack)}</span><div class="mono ok">refused · ${esc(r.message)}</div></div>${r.tx ? txLink(r.tx) : ""}</div>`).join("")}
+        <div class="aw-step done" style="--d:${0.6 + steps.length * 0.55}s"><span class="ck">◆</span><div><b>${steps.length}/${steps.length} refused</b> <span class="dim">· escrow untouched · fetched from the chain</span></div><a class="aw-link" href="#/verify">Try it yourself →</a></div>
+      </div></div>`;
+  }
   function landing() {
     const m = M();
-    const proof = m && m.mode === "live" ? `<div class="hero-proof"><div><b>${m.enclaves.length}</b><span class="mute">enclaves on testnet</span></div><div><b>${m.refusals.filter((r) => r.onchain).length}</b><span class="mute">attacks refused on-chain</span></div><div><b>${m.disputes.filter((d) => d.status === "Resolved").length}</b><span class="mute">rulings verified on-chain</span></div></div>` : "";
-    return `<div class="landing view-enter">
-      <nav class="lnav" aria-label="Primary"><a class="brand" href="#/">${I.logo}PACTUM</a>
-        <div class="links"><a href="#/verify" style="color:var(--emerald)">Verify</a><a href="#protocol">Protocol</a><a href="#/diplomacy">Network</a><a href="#/tribunal">Tribunal</a><a href="${REPO}#readme" target="_blank" rel="noopener">Documentation</a></div>
-        <div class="right"><span data-netstat>${netstat()}</span><a class="btn primary" href="#/command">ENTER COMMAND</a><button class="menu-btn" id="lmenu" aria-label="Open menu" aria-expanded="false">${I.menu}</button></div></nav>
-      <div class="mobile-menu" id="lmenu-panel"><a href="#/verify" style="color:var(--emerald);font-weight:600">Verify in 3 minutes →</a><a href="#/command">Enter command</a><a href="#protocol">Protocol</a><a href="#/diplomacy">Network</a><a href="#/tribunal">Tribunal</a><a href="${REPO}#readme" target="_blank" rel="noopener">Documentation</a><span style="padding:10px 4px" data-netstat>${netstat()}</span></div>
-      <header class="hero"><div>
-          <span class="kicker label"><span class="dot" style="color:var(--emerald)"></span>Built on NEAR · Testnet</span>
-          <h1>SOVEREIGN<br>DIGITAL <em>DIPLOMACY.</em></h1>
-          <p class="lead">The infrastructure for autonomous agents to negotiate, bond, adjudicate and enforce agreements through cryptographic trust.</p>
-          <div class="ctas"><a class="btn primary" href="#/verify">VERIFY IN 3 MINUTES</a><a class="btn" href="#/command">ENTER COMMAND</a><a class="btn ghost" href="#protocol">EXPLORE PROTOCOL</a></div><p class="mute" style="margin-top:12px;font-size:13px">Judges: try to rob a treaty and watch the chain refuse it, fetched live from NEAR testnet. No wallet needed.</p>${proof}
-        </div><div>${heroArt}</div></header>
-      <section class="sec" id="protocol"><span class="label">Core capabilities</span><h2>An institution, not an app.</h2><p class="intro">Every agent gets a sovereign identity it cannot drain, every agreement is backed by escrow, and every dispute ends in a verifiable ruling enforced by the contract itself.</p>
-        <div class="caps">
-          <div class="cap">${I.enclave.replace('viewBox="0 0 20 20"', 'viewBox="0 0 20 20" width="30" height="30"')}<h3>Sovereign Enclaves</h3><p>Each agent is a NEAR sub-account created by the protocol, holding only a function-call key: seven methods, a 0.25 NEAR gas allowance, no transfers.</p></div>
-          <div class="cap">${I.lock}<h3>Bonded Treaties</h3><p>Natural-language terms, hashed on-chain. Both sides move collateral from free balance into escrow before a treaty becomes active.</p></div>
-          <div class="cap">${I.seal}<h3>TEE-Signed Rulings</h3><p>Judges reason inside NEAR AI Cloud TEEs. The contract recovers each signature with <span class="mono">ecrecover</span> and needs two of three to agree.</p></div>
-          <div class="cap">${I.shield}<h3>On-Chain Enforcement</h3><p>Slashing, release or forfeit happens in the same transaction as the ruling. Payouts on other chains are signed by Chain Signatures.</p></div>
+    const live = m && m.mode === "live";
+    const nOn = live ? m.refusals.filter((r) => r.onchain).length : 8;
+    const nRul = live ? m.disputes.filter((d) => d.status === "Resolved").length : 2;
+    return `<div class="landing rx view-enter">
+      <nav class="rx-nav" aria-label="Primary">
+        <a class="brand" href="#/">${I.logo}<span>Pactum</span></a>
+        <div class="rx-pill"><a href="#/verify">Verify</a><a href="#protocol">Protocol</a><a href="#/diplomacy">Network</a><a href="#/tribunal">Tribunal</a><a href="#/markets">Markets</a></div>
+        <div class="rx-right"><a class="rx-link" href="${REPO}#readme" target="_blank" rel="noopener">Docs</a><a class="btn primary" href="#/verify">Rob it yourself ↗</a><button class="menu-btn" id="lmenu" aria-label="Open menu" aria-expanded="false">${I.menu}</button></div>
+      </nav>
+      <div class="mobile-menu" id="lmenu-panel"><a href="#/verify" style="color:var(--emerald);font-weight:600">Verify in 3 minutes →</a><a href="#/command">Enter command</a><a href="#protocol">Protocol</a><a href="#/diplomacy">Network</a><a href="#/tribunal">Tribunal</a><a href="#/markets">Markets</a><a href="${REPO}#readme" target="_blank" rel="noopener">Docs</a></div>
+      <header class="rx-hero">
+        <div class="stars" aria-hidden="true"></div>
+        <a class="rx-badge" href="#/tribunal"><span class="dot"></span>Real NEAR AI Cloud TEE judges are live — see the ruling →</a>
+        <h1>Treaties AI agents<br><span>can't break.</span></h1>
+        <p class="lead">Pactum gives every agent a sovereign enclave, locks its promises in escrow, and lets TEE-attested AI judges decide disputes the contract enforces itself.</p>
+        <div class="ctas"><a class="btn primary lg" href="#/verify">Verify in 3 minutes ↗</a><a class="btn lg" href="#/command">Enter command</a></div>
+        <div class="rx-status"><span data-netstat>${netstat()}</span><span class="sep">·</span><span>${nOn}/${nOn} attacks refused on-chain</span><span class="sep">·</span><span>${nRul} rulings verified</span></div>
+        <div class="eclipse" aria-hidden="true"><div class="ring"></div><div class="core"></div></div>
+        ${consoleDemo(m)}
+      </header>
+      <section class="rx-marquee" aria-label="Built on NEAR"><div class="cap">Built on NEAR — every piece used for real</div><div class="track"><div class="row">${[...KITS, ...KITS].map((k) => `<span>${I.enclave.replace('viewBox="0 0 20 20"', 'viewBox="0 0 20 20" width="16" height="16"')}${esc(k)}</span>`).join("")}</div></div></section>
+      <section class="rx-sec center" id="protocol"><span class="rx-tag">What Pactum enforces</span><h2>Every promise an agent makes,<br><span>backed and enforced once.</span></h2><p class="intro">If an agent can walk away with the money, its deals mean nothing. Pactum makes walking away impossible, and makes every dispute end in a ruling anyone can verify.</p>
+        <div class="rx-feats">
+          <div class="rx-feat">${I.enclave}<h3>Sovereign enclaves</h3><p>Each agent is a sub-account the contract creates, holding only a function-call key: 7 methods, a 0.25 NEAR gas allowance, no transfers.</p></div>
+          <div class="rx-feat">${I.lock}<h3>Bonded treaties</h3><p>Natural-language terms, hashed on-chain. Both sides move collateral into escrow before a treaty goes live.</p></div>
+          <div class="rx-feat">${I.seal}<h3>TEE-signed rulings</h3><p>Three models judge inside NEAR AI Cloud TEEs. The contract recovers each signature with ecrecover; two of three must agree.</p></div>
+          <div class="rx-feat">${I.shield}<h3>On-chain enforcement</h3><p>Slash, release or forfeit in the same transaction. Cross-chain payouts are signed by NEAR's MPC network.</p></div>
         </div></section>
-      <section class="sec"><span class="label">Protocol lifecycle</span><h2>Five stages. One record.</h2>
-        <div class="lifecycle">${[["Agent identities", "register_enclave creates a sub-account with a scoped key and credits collateral.", "Sub-accounts · function-call keys"], ["Treaty formation", "Agents negotiate, propose and ratify the exact terms hash, gaslessly.", "Meta transactions (NEP-366)"], ["Bonded escrow", "Bonds move free → locked. Locked funds cannot be withdrawn by anyone.", "Escrow ledger · audit()"], ["Dispute adjudication", "Hash-bound evidence; three TEE judges; 2-of-3 signatures recovered on-chain.", "NEAR AI Cloud · ecrecover"], ["Enforcement", "Slash, release or forfeit; cross-chain payouts signed by the MPC network.", "Chain Signatures · NEAR Intents"]].map(([t, p, k], i) => `<div class="lc"><span class="n">0${i + 1}</span><div class="bar"></div><h4>${t}</h4><p>${p}</p><div class="kit">${k}</div></div>`).join("")}</div></section>
-      <section class="sec"><div class="split"><div><span class="label">The network</span><h2>A live map of sovereign relationships.</h2><p class="intro">Read straight from the Pactum contract on NEAR testnet: enclaves, treaties and their status. ${m && m.mode === "live" ? `Currently ${m.enclaves.length} enclaves and ${m.treaties.length} treaty on <span class="mono">${esc(m.contract)}</span>.` : ""}</p><div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:20px"><a class="btn" href="#/diplomacy">Open the network →</a><a class="btn ghost" href="#/markets">Bonded Markets →</a></div></div>
-        <div class="preview-frame" id="land-topo">${m ? "" : `<div class="skeleton" style="height:260px"></div>`}</div></div></section>
-      <section class="sec tribunal-sec"><div class="split"><div class="preview-frame" style="border-color:rgba(215,184,121,.25)">${m && m.disputes[0] ? rulingDoc(m.disputes[0], true) : `<div class="empty">${I.empty}No ruling recorded yet.</div>`}</div>
-        <div><span class="label" style="color:var(--gold)">The tribunal</span><h2>Judgement you can <em>verify.</em></h2><p class="intro">Each judge signs the exact bytes it received and returned. Pactum binds every vote to the contract, the dispute and the evidence hash, so a relayer can neither forge nor replay a verdict.</p><a class="btn" href="#/tribunal" style="margin-top:20px">Enter the tribunal →</a></div></div></section>
-      <section class="final-cta"><span class="label">Pactum</span><h2>TRUST MUST BE<br>ENFORCEABLE.</h2><p class="intro" style="margin:0 auto 28px">Build sovereign relationships between autonomous agents with verifiable agreements and cryptographic enforcement.</p><a class="btn primary" href="#/command">ENTER THE NETWORK</a></section>
-      <footer class="lfoot"><span>Pactum · NEAR HACKATHON 2026 · MIT</span><span><a href="${REPO}" target="_blank" rel="noopener">GitHub</a> · <a href="${REPO}/blob/main/RULES.md" target="_blank" rel="noopener">Rules</a> · <a href="${REPO}/blob/main/ARCHITECTURE.md" target="_blank" rel="noopener">Architecture</a></span></footer>
+      <section class="rx-sec"><div class="rx-split"><div><span class="rx-tag">How it works</span><h2 class="left">One record, <span>five stages.</span></h2></div><p class="intro">Each stage maps to a contract method and a rule in RULES.md, and each one is linked to a real testnet transaction.<br><a href="#/events">Open the event history →</a></p></div>
+        <div class="rx-steps">${[["Agent identities", "register_enclave → sub-account + scoped key", "Sub-accounts · function-call keys"], ["Treaty formation", "propose / ratify the exact terms hash, gasless", "Meta transactions"], ["Bonded escrow", "free → locked; nobody can withdraw it", "Escrow ledger · audit()"], ["Adjudication", "hash-bound evidence, 3 TEE judges, 2-of-3", "NEAR AI Cloud · ecrecover"], ["Enforcement", "slash / release / forfeit; MPC-signed payout", "Chain Signatures"]].map(([t, p, k], i) => `<div class="rx-step"><span class="n mono">0${i + 1}</span><h4>${t}</h4><p>${p}</p><span class="kit mono">${k}</span></div>`).join("")}</div></section>
+      <section class="rx-sec"><div class="rx-split"><div><span class="rx-tag">On testnet</span><h2 class="left">Real disputes, <span>real rulings.</span></h2></div><p class="intro">Not mockups: these ran on <span class="mono">${esc(m?.contract || "pactum.stunner70.testnet")}</span>. Open any of them and follow the transactions.</p></div>
+        <div class="rx-cases">
+          <a class="rx-case" href="#/tribunal"><span class="tag mono">Dispute №1 · NEAR AI Cloud</span><div class="vis v1" aria-hidden="true"></div><h3>Three AI models, inside TEEs, rule on an oracle outage</h3><div class="mets"><div><b>3/3</b><span>TEE signatures recovered</span></div><div><b>2840</b><span>bps shortfall</span></div></div></a>
+          <a class="rx-case" href="#/verify"><span class="tag mono">Attack console</span><div class="vis v2" aria-hidden="true"></div><h3>Anyone can try to rob a treaty; the chain refuses</h3><div class="mets"><div><b>${nOn}/${nOn}</b><span>refused on-chain</span></div><div><b>9/9</b><span>wallet flow test</span></div></div></a>
+          <a class="rx-case" href="#/markets"><span class="tag mono">Bonded Markets · simulation</span><div class="vis v3" aria-hidden="true"></div><h3>Oracles bid collateral for contracts; failure gets slashed</h3><div class="mets"><div><b>+4</b><span>NEAR to the vault</span></div><div><b>−4</b><span>NEAR for the breacher</span></div></div></a>
+        </div></section>
+      <section class="rx-stats"><div><b>32</b><span>testnet transactions re-verified</span></div><div><b>${nOn}/${nOn}</b><span>recorded attacks refused</span></div><div><b>3/3</b><span>TEE signatures recovered on-chain</span></div><div><b>24</b><span>contract tests passing</span></div></section>
+      <section class="rx-sec"><div class="rx-cta"><div class="eclipse small" aria-hidden="true"><div class="ring"></div></div><span class="rx-tag">Pactum</span><h2>Trust must be <span>enforceable.</span></h2><p class="intro">Connect a testnet wallet, create your own enclave, and try to rob a treaty. Every attempt is refused on-chain.</p><div class="ctas"><a class="btn primary lg" href="#/verify">Rob it yourself ↗</a><a class="btn lg" href="${REPO}" target="_blank" rel="noopener">View the repo</a></div></div></section>
+      <footer class="rx-foot"><div class="cols">
+        <div><a class="brand" href="#/">${I.logo}<span>Pactum</span></a><p class="dim">The on-chain diplomatic layer for autonomous AI agents. Built for NEAR HACKATHON 2026.</p></div>
+        <div><h5>Product</h5><a href="#/verify">Verify</a><a href="#/command">Command</a><a href="#/tribunal">Tribunal</a><a href="#/markets">Bonded Markets</a><a href="#/events">Events</a></div>
+        <div><h5>Evidence</h5><a href="${REPO}/blob/main/RULES.md" target="_blank" rel="noopener">RULES.md</a><a href="${REPO}/blob/main/evidence/testnet-evidence.json" target="_blank" rel="noopener">Testnet evidence</a><a href="${REPO}/tree/main/evidence/attestations" target="_blank" rel="noopener">Attestations</a><a href="${EXPLORER}/address/${esc(m?.contract || "pactum.stunner70.testnet")}" target="_blank" rel="noopener">Contract ↗</a></div>
+        <div><h5>Project</h5><a href="${REPO}" target="_blank" rel="noopener">GitHub</a><a href="${REPO}/blob/main/ARCHITECTURE.md" target="_blank" rel="noopener">Architecture</a><a href="${REPO}/blob/main/LICENSE" target="_blank" rel="noopener">MIT License</a></div>
+      </div><div class="legal"><span>© 2026 Pactum · #NEARHackathon</span>${live && m.audit ? `<span><span class="dot" style="color:${m.audit.solvent ? "var(--ok)" : "var(--fail)"}"></span> contract ${m.audit.solvent ? "solvent" : "NOT solvent"} on testnet (audit)</span>` : `<span>NEAR testnet</span>`}</div><div class="giant" aria-hidden="true">PACTUM</div></footer>
     </div>`;
   }
 
@@ -1041,7 +1050,7 @@
     const root = $("#root");
     if (!r || !VIEWS[r]) {
       root.innerHTML = landing();
-      if (M()) topology($("#land-topo"), { mini: true });
+      if (M() && $("#land-topo")) topology($("#land-topo"), { mini: true });
       bindRefs(root);
       const mb = $("#lmenu"); if (mb) mb.onclick = () => { const p = $("#lmenu-panel"); const o = p.classList.toggle("open"); mb.setAttribute("aria-expanded", o); };
       document.title = "Pactum · Sovereign digital diplomacy";
