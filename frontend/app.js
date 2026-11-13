@@ -749,6 +749,7 @@
     const loop = ["Bid collateral", "Win the contract", "Deliver or defect", "Challenge", "TEE verdict", "Slash / payout / forfeit", "Reputation shift"];
     const real = MK.real;
     return pageHead("Competitive layer", "BONDED MARKETS", "The same diplomatic layer runs competitive markets: agents win work by posting collateral and lose it when they fail to deliver.").replace(modeBadge(), `<span class="mode-badge demo">SIMULATION · SAME CONTRACT RULES</span>`) + `
+      <section class="panel game-panel" style="margin-bottom:var(--gap)"><header><h2>Play a market · you are the vault</h2><span class="mode-badge demo">PLAYABLE SIMULATION · IN YOUR BROWSER</span></header><div class="body"><p class="dim" style="margin:0 0 14px">Award a price-feed contract to one of three bonded oracles, then judge each epoch from two independent monitors. Every challenge is settled by the same rules the contract enforces (RULES S-1 to S-5, the D-7 clamp, the dual-feed check). No wallet, no transactions.</p><div id="game"></div></div></section>
       <section class="panel" style="margin-bottom:var(--gap)"><header><h2>The loop · read this in 60 seconds</h2></header><div class="body">
         <div class="loop">${loop.map((s, i) => `<div><span class="mono">0${i + 1}</span>${esc(s)}</div>`).join("")}</div>
         <p class="dim" style="margin:14px 0 0">Nothing here is new protocol. A bid is <span class="mono">propose_treaty</span> with a bond, winning is <span class="mono">ratify</span>, a losing bid is <span class="mono">cancel_proposal</span>, a challenge is <span class="mono">file_dispute</span>, and the outcome is the tribunal's settlement rule. ${d.startCollateral} NEAR starting collateral per agent; rounds are scored by what the contract settles.</p></div></section>
@@ -769,6 +770,116 @@
           <p class="dim">Every verdict above is signed in the same TEE wire format as the real judges and re-checked by <span class="mono">npm run verify</span> (evidence/markets-evidence.json).</p>
           <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px"><a class="btn" href="#/verify">See real attacks refused on-chain →</a><a class="btn ghost" href="${REPO}/blob/main/offchain/src/markets.ts" target="_blank" rel="noopener">Scenario source</a></div></div></section></div>`;
   }
+  // ---- playable market: you are the vault. Same settlement rules as the contract (RULES S-1..S-7, D-3, D-7).
+  const G = { s: null };
+  const PROVIDERS = [
+    { name: "helios", style: "Big bond, strict promise" },
+    { name: "vesper", style: "Middle of the road" },
+    { name: "nova", style: "Cheap bond, loose promise" },
+  ];
+  const rnd = (a, b) => a + Math.random() * (b - a);
+  function gNew() {
+    // hidden reliability (probability an epoch is clean); bids are noisy signals of it
+    const rel = [rnd(0.55, 0.95), rnd(0.5, 0.9), rnd(0.35, 0.8)].sort(() => Math.random() - 0.5);
+    G.s = {
+      epoch: 0, maxEpochs: 6, wallet: 10, start: 10, phase: "tender", log: [], treaty: null, reading: null,
+      prov: PROVIDERS.map((p, i) => ({ ...p, rel: rel[i], trust: 500, collateral: 10, bond: 0, promise: 0 })),
+    };
+    gBids();
+  }
+  function gBids() {
+    G.s.prov.forEach((p) => {
+      // better providers tend to bond more and promise more, with noise
+      p.bond = Math.max(1, Math.min(5, Math.round((p.rel * 6 + rnd(-1.2, 1.2)) * 2) / 2));
+      p.promise = Math.min(9990, Math.round((9600 + p.rel * 380 + rnd(-60, 60)) / 10) * 10);
+      p.bond = Math.min(p.bond, p.collateral);
+    });
+  }
+  const trustOf = (r) => Math.max(0, Math.min(1000, r));
+  function gAward(i) {
+    const s = G.s, p = s.prov[i];
+    if (p.collateral < p.bond || s.wallet < 1) return;
+    p.collateral -= p.bond; s.wallet -= 1;
+    s.treaty = { i, bond: p.bond, myBond: 1, promise: p.promise, elevated: false };
+    s.log.unshift({ k: "Treaty", t: `You award the feed contract to ${p.name}: ${near(p.bond)} NEAR bond, ${(p.promise / 100).toFixed(2)}% promise. You post 1 NEAR. Both bonds are escrowed (C-3).` });
+    p.trust = trustOf(p.trust + 10);
+    gEpoch();
+  }
+  function gEpoch() {
+    const s = G.s, t = s.treaty, p = s.prov[t.i];
+    s.epoch++;
+    const clean = Math.random() < p.rel;
+    const truth = clean ? Math.round(rnd(t.promise - 20, 9999)) : Math.round(rnd(5600, t.promise - 300));
+    let a = Math.round(truth + rnd(-40, 40)), b = Math.round(truth + rnd(-40, 40));
+    let rigged = false;
+    if (Math.random() < 0.15) { rigged = true; if (Math.random() < 0.5) a = Math.round(rnd(5500, 7500)); else b = Math.round(rnd(5500, 7500)); } // one monitor faulty
+    s.reading = { a: Math.min(10000, a), b: Math.min(10000, b), truth, rigged };
+    s.phase = "epoch";
+  }
+  // Mirrors the judges + contract: dual-feed check (D-3), shortfall vs promise, verdict, clamp (D-7), settlement (S-*)
+  function gChallenge(challenge) {
+    const s = G.s, t = s.treaty, p = s.prov[t.i], r = s.reading;
+    if (!challenge) {
+      const breach = r.truth < t.promise - 200;
+      s.log.unshift({ k: `Epoch ${s.epoch}`, t: `Monitors ${(r.a / 100).toFixed(1)}% / ${(r.b / 100).toFixed(1)}%. You accept the epoch.${breach ? ` (${p.name} actually under-delivered: a missed chance.)` : ""}` });
+      if (!breach) p.trust = trustOf(p.trust + 40 / 6);
+    } else {
+      if (s.wallet < 0.5) return;
+      s.wallet -= 0.5;
+      const conflict = Math.abs(r.a - r.b) > Math.max(r.a, r.b) * 0.05;
+      let raw, metric = 0;
+      if (conflict) raw = "FEED_CONFLICT";
+      else {
+        const obs = (r.a + r.b) / 2;
+        metric = Math.max(0, Math.round(((t.promise - obs) * 10000) / t.promise));
+        raw = metric >= 2500 ? "CRITICAL_BREACH" : metric >= 800 ? "ELEVATED_RISK" : metric === 0 ? "MALICIOUS_REPORT" : "NORMAL";
+      }
+      const fin = raw === "CRITICAL_BREACH" && metric < 2500 ? "ELEVATED_RISK" : (raw === "CRITICAL_BREACH" || raw === "ELEVATED_RISK") && metric < 500 ? "NORMAL" : raw;
+      let msg = "", rule = "";
+      if (fin === "CRITICAL_BREACH") { s.wallet += 0.5 + t.bond + t.myBond; msg = `${p.name}'s full ${near(t.bond)} NEAR bond is slashed to you; your bonds return; treaty closed.`; rule = "S-1"; p.trust = trustOf(p.trust - 200); s.treaty = null; }
+      else if (fin === "ELEVATED_RISK") {
+        const cut = Math.round(t.bond * 0.25 * 1000) / 1000; t.bond -= cut; s.wallet += 0.5 + cut; p.trust = trustOf(p.trust - 80); rule = "S-2";
+        if (t.elevated) { s.wallet += t.myBond; p.collateral += t.bond; msg = `25% (${near(cut)} NEAR) slashed to you. Second elevated verdict: treaty closed, remaining bonds released.`; s.treaty = null; }
+        else { t.elevated = true; msg = `25% of ${p.name}'s bond (${near(cut)} NEAR) is slashed to you; the treaty continues.`; }
+      }
+      else if (fin === "NORMAL") { s.wallet += 0.45; msg = "No breach. 10% of your dispute bond goes to the treasury."; rule = "S-3"; }
+      else if (fin === "MALICIOUS_REPORT") { p.collateral += 0.5; msg = `Both monitors show the promise was met. Your 0.5 NEAR dispute bond goes to ${p.name}.`; rule = "S-4"; p.trust = trustOf(p.trust + 20); }
+      else { s.wallet += 0.5; msg = "The monitors disagree by more than 5%. Full refund, no slash."; rule = "S-5"; }
+      s.log.unshift({ k: `Epoch ${s.epoch} · ${fin}`, t: `Monitors ${(r.a / 100).toFixed(1)}% / ${(r.b / 100).toFixed(1)}% vs ${(t.promise / 100).toFixed(2)}% promise${metric ? ` (shortfall ${metric} bps)` : ""}. ${msg}`, rule, v: fin });
+    }
+    if (s.epoch >= s.maxEpochs) {
+      if (s.treaty) { s.wallet += s.treaty.myBond; s.prov[s.treaty.i].collateral += s.treaty.bond; s.prov[s.treaty.i].trust = trustOf(s.prov[s.treaty.i].trust + 40); s.log.unshift({ k: "Treaty concluded", t: "Term over: both bonds are released (T-5)." }); s.treaty = null; }
+      s.phase = "over";
+    } else if (!s.treaty) { s.phase = "tender"; gBids(); }
+    else gEpoch();
+  }
+  function gView() {
+    const s = G.s; if (!s) return "";
+    const pnl = Math.round((s.wallet + (s.treaty ? s.treaty.myBond : 0) - s.start) * 1000) / 1000;
+    const head = `<div class="gstat"><div><span class="label">Your wallet</span><b>${near(s.wallet)} NEAR</b></div><div><span class="label">P&amp;L</span>${pnlChip(String(pnl))}</div><div><span class="label">Epoch</span><b>${Math.min(s.epoch, s.maxEpochs)} / ${s.maxEpochs}</b></div><div><span class="label">Escrowed</span><b>${s.treaty ? `${near(s.treaty.myBond)} + ${near(s.treaty.bond)}` : "—"}</b></div></div>`;
+    let body = "";
+    if (s.phase === "tender") {
+      body = `<div class="label">Tender: three oracles bid for your price-feed contract. Pick one (their reliability is hidden).</div><div class="bids">${s.prov.map((p, i) => `<button class="bid" data-g="award:${i}" ${p.collateral < p.bond ? "disabled" : ""}><b>${p.name}</b><span class="mute">${esc(p.style)}</span><span>Bond <b>${near(p.bond)} NEAR</b></span><span>Promise <b>${(p.promise / 100).toFixed(2)}%</b></span><span class="mono mute">trust ${Math.round(p.trust)} · collateral ${near(p.collateral)}</span></button>`).join("")}</div>`;
+    } else if (s.phase === "epoch") {
+      const r = s.reading, t = s.treaty, p = s.prov[t.i];
+      body = `<div class="label">Epoch ${s.epoch}: ${p.name} served your feed. Two independent monitors report:</div>
+        <div class="mons"><div><span class="label">Monitor A</span><b style="color:${r.a < t.promise ? "var(--dispute)" : "var(--ok)"}">${(r.a / 100).toFixed(2)}%</b></div><div><span class="label">Monitor B</span><b style="color:${r.b < t.promise ? "var(--dispute)" : "var(--ok)"}">${(r.b / 100).toFixed(2)}%</b></div><div><span class="label">Promised</span><b>${(t.promise / 100).toFixed(2)}%</b></div></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px"><button class="btn primary" data-g="challenge" ${s.wallet < 0.5 ? "disabled" : ""}>Challenge (stake 0.5 NEAR)</button><button class="btn" data-g="accept">Accept epoch</button></div>
+        <div class="mute" style="font-size:12px;margin-top:8px">A real breach pays you the slash; a false claim forfeits your stake; if the monitors disagree by more than 5%, you get a full refund.</div>`;
+    } else {
+      const grade = pnl >= 3 ? "Sovereign strategist" : pnl > 0 ? "Profitable" : pnl === 0 ? "Break-even" : "Outplayed";
+      body = `<div class="gover"><div class="label">Game over</div><div style="font-family:var(--f-display);font-size:28px;margin:6px 0">${pnlChip(String(pnl))}</div><div class="dim">${grade}. Hidden reliability was: ${s.prov.map((p) => `${p.name} ${Math.round(p.rel * 100)}%`).join(" · ")}</div><button class="btn primary" data-g="new" style="margin-top:14px">Play again</button></div>`;
+    }
+    const lb = [...s.prov].sort((x, y) => y.trust - x.trust).map((p) => `<div><b>${p.name}</b><span class="mono">trust ${Math.round(p.trust)}</span><span class="mono mute">${near(p.collateral)} NEAR</span></div>`).join("");
+    return `${head}<div class="gmain"><div>${body}</div><div><div class="label">Provider standings</div><div class="gstand">${lb}</div></div></div>
+      <div class="glog">${s.log.slice(0, 8).map((l) => `<div><span class="k">${esc(l.k)}</span>${l.rule ? `<span class="mono" style="color:var(--gold)">${l.rule}</span>` : ""}<div>${esc(l.t)}</div></div>`).join("") || `<div class="mute">Award a contract to start.</div>`}</div>`;
+  }
+  function gPaint() {
+    const el = $("#game"); if (!el) return;
+    el.innerHTML = gView();
+    $$("[data-g]", el).forEach((b) => (b.onclick = () => { const [k, v] = b.dataset.g.split(":"); if (k === "award") gAward(+v); else if (k === "challenge") gChallenge(true); else if (k === "accept") gChallenge(false); else gNew(); gPaint(); }));
+  }
+
   async function marketsMount() {
     try {
       MK.data ||= await (await fetch("data/markets-data.json")).json();
@@ -778,6 +889,8 @@
       }
     } catch (e) { $("#main").innerHTML = `<div class="notice err">Could not load market data: ${esc(e.message)}</div>`; return; }
     $("#main").innerHTML = vMarkets();
+    if (!G.s) gNew();
+    gPaint();
   }
 
   // ---------------------------------------------------------------- router
