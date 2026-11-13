@@ -3,171 +3,23 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Pactum War Room</title>
-<style>
-:root{--bg:#07090f;--panel:#0e131d;--line:#1d2635;--ink:#e6ecf5;--dim:#7f8ba0;--near:#00ec97;--warn:#ffb020;--bad:#ff4d6d;--info:#5ab0ff;--vio:#a78bfa}
-*{box-sizing:border-box}
-body{margin:0;background:radial-gradient(1200px 700px at 50% -10%,#10213a 0%,var(--bg) 60%);color:var(--ink);font:14px/1.45 ui-sans-serif,system-ui,Segoe UI,Roboto,sans-serif;min-height:100vh}
-header{display:flex;align-items:center;gap:12px;padding:14px 20px;border-bottom:1px solid var(--line);flex-wrap:wrap}
-h1{margin:0;font-size:20px;letter-spacing:.06em}h1 b{color:var(--near)}
-.tag{font-size:11px;padding:3px 8px;border:1px solid var(--line);border-radius:99px;color:var(--dim)}
-.tag.live{color:var(--near);border-color:#0b5}
-.ctrl{margin-left:auto;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-button{background:#132036;color:var(--ink);border:1px solid #24406a;border-radius:8px;padding:7px 12px;cursor:pointer;font:inherit}
-button:hover{border-color:var(--near)}
-input[type=range]{accent-color:var(--near)}
-main{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(320px,1fr);gap:16px;padding:16px 20px}
-@media(max-width:960px){main{grid-template-columns:1fr;padding:12px 16px}}
-.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px;min-width:0}
-.card h2{margin:0 0 10px;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
-.stack{display:grid;gap:16px;align-content:start}
-#map{width:100%;aspect-ratio:1.35;display:block}
-.judges{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
-@media(max-width:560px){.judges{grid-template-columns:1fr}}
-.judge{border:1px solid var(--line);border-radius:10px;padding:10px;min-height:110px;transition:.3s}
-.judge .n{font-weight:600}.mono{font-family:ui-monospace,monospace;font-size:10.5px;color:var(--dim);word-break:break-all}
-.judge .v{margin-top:8px;font-weight:700;font-size:12px}
-.judge.on{border-color:var(--vio);box-shadow:0 0 0 1px var(--vio) inset}
-.verdict{margin-top:10px;padding:10px;border-radius:10px;text-align:center;font-weight:700;letter-spacing:.06em;border:1px dashed var(--line);color:var(--dim)}
-.log{height:300px;overflow:auto;font-size:12.5px;display:flex;flex-direction:column;gap:6px;padding-right:4px}
-.ev{border-left:3px solid var(--line);padding:4px 8px;background:#0b1019;border-radius:0 6px 6px 0}
-.ev .k{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim)}
-table{width:100%;border-collapse:collapse;font-size:12.5px}
-th,td{text-align:left;padding:5px 6px;border-bottom:1px solid var(--line);white-space:nowrap}
-th{color:var(--dim);font-weight:500;font-size:11px;letter-spacing:.06em;text-transform:uppercase}
-.scroll{overflow-x:auto}
-.pill{display:inline-block;padding:1px 7px;border-radius:99px;font-size:11px;border:1px solid currentColor}
-.rob{display:grid;gap:6px;max-height:260px;overflow:auto}
-.rob div{display:grid;grid-template-columns:78px 1fr;gap:8px;font-size:12px;align-items:start}
-.rob b{color:var(--bad);font-family:ui-monospace,monospace;font-size:11px}
-.rob .r{color:var(--near);font-family:ui-monospace,monospace;font-size:11px;word-break:break-word}
-.legend{display:flex;gap:12px;flex-wrap:wrap;font-size:11px;color:var(--dim);margin-top:8px}
-.legend span::before{content:"";display:inline-block;width:10px;height:3px;margin-right:5px;vertical-align:middle;background:var(--c)}
-footer{padding:10px 20px 24px;color:var(--dim);font-size:12px}
-code{color:var(--info)}
-</style>
+<title>Pactum</title>
+<meta name="description" content="Pactum: sovereign digital diplomacy for autonomous agents. Bonded treaties, TEE-signed rulings and on-chain enforcement on NEAR.">
+<meta name="theme-color" content="#090d0c">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23090d0c'/%3E%3Cpath d='M16 5 27 11v10L16 27 5 21V11z' fill='none' stroke='%23b8f36b' stroke-width='2'/%3E%3Cpath d='M16 11v10M11 14l5 3 5-3' fill='none' stroke='%23b8f36b' stroke-width='2'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css?v=2.0.5">
 </head>
 <body>
-<header>
-  <h1>PACT<b>UM</b></h1>
-  <span class="tag">sovereign agent enclaves · bonded treaties · TEE-signed rulings</span>
-  <span class="tag" id="mode">loading</span>
-  <div class="ctrl">
-    <button id="play">Play</button><button id="step">Step</button><button id="end">Jump to end</button><button id="reset">Reset</button>
-    <label class="tag">speed <input id="speed" type="range" min="150" max="1800" value="700"></label>
-  </div>
-</header>
-<main>
-  <div class="stack">
-    <section class="card">
-      <h2>Diplomacy map</h2>
-      <svg id="map" viewBox="0 0 800 590" role="img" aria-label="Enclaves and treaties"></svg>
-      <div class="legend"><span style="--c:var(--info)">negotiating</span><span style="--c:var(--near)">treaty in escrow</span><span style="--c:var(--bad)">dispute / attack</span><span style="--c:var(--warn)">payout</span><span style="--c:#445">closed</span></div>
-    </section>
-    <section class="card">
-      <h2>Tribunal · NEAR AI Cloud TEE judges (signatures recovered on-chain)</h2>
-      <div class="judges" id="judges"></div>
-      <div class="verdict" id="verdict">awaiting dispute</div>
-    </section>
-    <section class="card">
-      <h2>Enclaves & escrow</h2>
-      <div class="scroll"><table id="enc"><thead><tr><th>Enclave</th><th>Payout chain</th><th>Free</th><th>Escrow</th><th>Trust</th><th>State</th></tr></thead><tbody></tbody></table></div>
-    </section>
-  </div>
-  <div class="stack">
-    <section class="card"><h2>Event log</h2><div class="log" id="log"></div></section>
-    <section class="card"><h2>Try to rob the treaty · refusals</h2><div class="rob" id="rob"><span class="mono">no attempts yet</span></div></section>
-    <section class="card">
-      <h2>Treaties & rulings</h2>
-      <div class="scroll"><table id="tr"><thead><tr><th>#</th><th>Parties</th><th>Status</th><th>Escrow</th><th>Ruling</th></tr></thead><tbody></tbody></table></div>
-    </section>
-  </div>
-</main>
-<footer>Replays <code>demo-data.json</code> written by <code>npm run sim</code>. Add <code>?contract=&lt;account&gt;</code> to read live state from NEAR testnet.</footer>
-<script>
-const NS="http://www.w3.org/2000/svg",$=s=>document.querySelector(s);
-const CHAIN={near:"#00ec97",base:"#3b82f6",ethereum:"#a78bfa",solana:"#14f195",bitcoin:"#f7931a"};
-const VCOL={CRITICAL_BREACH:"var(--bad)",ELEVATED_RISK:"var(--warn)",NORMAL:"var(--near)",MALICIOUS_REPORT:"var(--vio)",FEED_CONFLICT:"var(--info)",NO_EVIDENCE:"var(--dim)"};
-const short=a=>String(a).split(".")[0];
-const svg=$("#map");let data,idx=0,timer=null,enc=[],judges=[],pos={},links={},state={};
-const el=(t,a={},p=svg)=>{const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);p.appendChild(e);return e};
-const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
-
-function layout(){
-  svg.innerHTML="";links={};pos={};
-  const d=el("defs"),g=el("radialGradient",{id:"glow"},d);el("stop",{offset:"0","stop-color":"#00ec97","stop-opacity":".35"},g);el("stop",{offset:"1","stop-color":"#00ec97","stop-opacity":"0"},g);
-  el("circle",{cx:400,cy:295,r:120,fill:"url(#glow)"});el("circle",{cx:400,cy:295,r:62,fill:"#0b1422",stroke:"#1d3350"});
-  el("text",{x:400,y:290,"text-anchor":"middle",fill:"#00ec97","font-size":15,"font-weight":700}).textContent="PACTUM";
-  el("text",{x:400,y:309,"text-anchor":"middle",fill:"#7f8ba0","font-size":10}).textContent="escrow + court";
-  el("g",{id:"links"});el("g",{id:"fx"});el("g",{id:"nodes"});
-}
-function addNode(e){
-  const i=enc.length-1,n=Math.max(4,enc.length),ang=-Math.PI/2+i*2*Math.PI/4+Math.PI/4,x=400+Math.cos(ang)*250,y=295+Math.sin(ang)*205;
-  pos[e.account]={x,y};const g=el("g",{id:"n-"+short(e.account)},$("#nodes"));
-  el("circle",{cx:x,cy:y,r:42,fill:"#0e1624",stroke:CHAIN[e.chain]||"#888","stroke-width":2},g);
-  el("text",{x,y:y-3,"text-anchor":"middle",fill:"#e6ecf5","font-size":15,"font-weight":700},g).textContent=short(e.account);
-  el("text",{x,y:y+14,"text-anchor":"middle",fill:CHAIN[e.chain]||"#888","font-size":10},g).textContent=(e.chain||"near").toUpperCase();
-  el("text",{x,y:y+60,"text-anchor":"middle",fill:"#7f8ba0","font-size":10,id:"t-"+short(e.account)},g).textContent="enclave";
-  pulse("center",e.account,"var(--near)");
-}
-function link(a,b,c,dash=""){if(!pos[a]||!pos[b])return;const k=[a,b].sort().join("|");let l=links[k];if(!l){l=el("line",{x1:pos[a].x,y1:pos[a].y,x2:pos[b].x,y2:pos[b].y,"stroke-width":3,"stroke-linecap":"round"},$("#links"));links[k]=l}l.setAttribute("stroke",c);l.setAttribute("stroke-dasharray",dash)}
-function pulse(f,t,c){const P=x=>x==="center"?{x:400,y:295}:pos[x];const a=P(f),b=P(t);if(!a||!b)return;const ci=el("circle",{r:7,fill:c},$("#fx"));const an=el("animateMotion",{dur:"1s",fill:"freeze",path:`M${a.x},${a.y} L${b.x},${b.y}`},ci);an.beginElement();setTimeout(()=>ci.remove(),1150)}
-function flash(a,c){const n=$("#n-"+short(a)+" circle");if(!n)return;n.setAttribute("fill",c);setTimeout(()=>n.setAttribute("fill","#0e1624"),650)}
-function renderJudges(){$("#judges").innerHTML=judges.map((j,i)=>`<div class="judge" id="j${i}"><div class="n">${esc(j.name||"Judge "+i)}</div><div class="mono">${esc(j.model)}</div><div class="mono">signer 0x${esc(j.signing_address.slice(0,10))}…</div><div class="v" id="jv${i}">—</div></div>`).join("")}
-function log(e,c){const d=document.createElement("div");d.className="ev";d.style.borderLeftColor=c||"var(--line)";d.innerHTML=`<div class="k">${esc(e.type.replace(/_/g," "))}</div>`;const t=document.createElement("div");t.textContent=e.text||"";d.appendChild(t);const L=$("#log");L.appendChild(d);L.scrollTop=L.scrollHeight}
-function rob(e){const R=$("#rob");if(R.firstElementChild?.classList.contains("mono"))R.innerHTML="";const d=document.createElement("div");d.innerHTML=`<b>${esc(e.rule)}</b><span>${esc(e.text.replace(/ -> REFUSED.*/,""))}<br><span class="r">✔ refused: ${esc(e.refusal||"")}</span></span>`;R.appendChild(d)}
-function tables(s){
-  if(s.enclaves)$("#enc tbody").innerHTML=s.enclaves.map(e=>`<tr><td>${esc(e.name)}</td><td><span class="pill" style="color:${CHAIN[e.chain]||"#888"}">${esc(e.chain)}</span></td><td>${esc(e.free)}</td><td>${esc(e.locked)}</td><td>${e.score??"—"}</td><td>${e.frozen?'<span class="pill" style="color:var(--bad)">frozen</span>':'<span class="pill" style="color:var(--near)">active</span>'}</td></tr>`).join("");
-  if(s.treaties)$("#tr tbody").innerHTML=s.treaties.map(t=>{const d=(s.disputes||[]).filter(x=>x.treaty_id===t.id).at(-1);return`<tr><td>${t.id}</td><td>${esc(short(t.a))} ↔ ${esc(short(t.b))}</td><td>${esc(t.status)}</td><td>${esc(t.bond_a)} + ${esc(t.bond_b)}</td><td>${d?.verdict?`<span class="pill" style="color:${VCOL[d.verdict]}">${esc(d.verdict)}</span>`:(d?"open":"—")}</td></tr>`}).join("");
-}
-// live tables rebuilt from events during replay
-function liveTables(){tables({enclaves:Object.values(state.enc),treaties:Object.values(state.tr),disputes:Object.values(state.ds)})}
-function apply(e){
-  let c;
-  switch(e.type){
-    case"intro":judges=e.judges||[];renderJudges();break;
-    case"enclave_registered":enc.push(e);addNode({account:e.enclave,chain:e.chain});state.enc[e.enclave]={name:short(e.enclave),chain:e.chain,free:String(e.collateral),locked:"0",score:500,frozen:false};liveTables();c="var(--near)";break;
-    case"offer":link(e.from,e.to,"var(--info)","6 6");pulse(e.from,e.to,"var(--info)");c="var(--info)";break;
-    case"intents_quote":c="var(--near)";break;
-    case"treaty_ratified":{const t=e.treaty;link(t.a,t.b,"var(--near)");pulse(t.a,"center","var(--near)");pulse(t.b,"center","var(--near)");state.tr[t.id]={id:t.id,a:t.a,b:t.b,status:"Active",bond_a:t.bond_a,bond_b:t.bond_b};
-      const A=state.enc[t.a],B=state.enc[t.b];if(A){A.free=String(+A.free-+t.bond_a);A.locked=String(+A.locked+ +t.bond_a)}if(B){B.free=String(+B.free-+t.bond_b);B.locked=String(+B.locked+ +t.bond_b)}liveTables();c="var(--near)";break}
-    case"rob_attempt":if(e.who&&pos[e.who]){flash(e.who,"#3a0d17");pulse(e.who,"center","var(--bad)")}rob(e);c="var(--bad)";break;
-    case"dispute_filed":{const d=e.dispute;link(d.plaintiff,d.defendant,"var(--bad)","2 6");flash(d.defendant,"#3a0d17");state.ds[d.id]={...d};if(state.tr[d.treaty_id])state.tr[d.treaty_id].status="Disputed";liveTables();
-      judges.forEach((_,i)=>{$("#j"+i).classList.remove("on");$("#jv"+i).textContent="reading evidence…";$("#jv"+i).style.color="var(--dim)"});$("#verdict").textContent="tribunal in session";$("#verdict").style.color="var(--dim)";$("#verdict").style.borderColor="";c="var(--bad)";break}
-    case"judge_vote":$("#j"+e.judge).classList.add("on");$("#jv"+e.judge).innerHTML=`${esc(e.verdict)}<div class="mono">${e.metric_bps} bps · ${esc(e.mode)}<br>sig ${esc(e.signature)}</div>`;$("#jv"+e.judge).style.color=VCOL[e.verdict];c="var(--vio)";break;
-    case"ruling":$("#verdict").textContent=`${e.final} · ${e.judges.length} TEE signatures recovered`+(e.raw!==e.final?` (clamped from ${e.raw})`:"");$("#verdict").style.color=VCOL[e.final];$("#verdict").style.borderColor=VCOL[e.final];if(state.ds[e.dispute])state.ds[e.dispute].verdict=e.final;liveTables();c=VCOL[e.final];break;
-    case"payout":pulse("center",e.enclave||"center","var(--warn)");if(e.enclave)flash(e.enclave,"#3a2a05");c="var(--warn)";break;
-    case"treaty_state":{const t=state.tr[e.treaty];if(t){t.status=e.status;t.bond_a=e.bond_a;t.bond_b=e.bond_b;link(t.a,t.b,e.status==="Closed"?"#334":"var(--near)",e.status==="Closed"?"4 4":"")}liveTables();break}
-    case"frozen":if(state.enc[e.enclave])state.enc[e.enclave].frozen=true;flash(e.enclave,"#3a0d17");liveTables();c="var(--bad)";break;
-    case"snapshot":tables(e.snapshot);for(const x of e.snapshot.enclaves){const t=$("#t-"+x.name);if(t)t.textContent=`trust ${x.score} · escrow ${x.locked}`}c="var(--near)";break;
-  }
-  log(e,c);
-}
-function reset(){stop();idx=0;enc=[];state={enc:{},tr:{},ds:{}};layout();renderJudges();$("#log").innerHTML="";$("#rob").innerHTML='<span class="mono">no attempts yet</span>';$("#verdict").textContent="awaiting dispute";$("#verdict").style.color="";$("#enc tbody").innerHTML="";$("#tr tbody").innerHTML=""}
-function step(){if(idx>=data.timeline.length)return stop();apply(data.timeline[idx++])}
-function stop(){clearInterval(timer);timer=null;$("#play").textContent="Play"}
-function play(){if(timer)return stop();if(idx>=data.timeline.length)reset();$("#play").textContent="Pause";timer=setInterval(step,+$("#speed").value)}
-
-async function live(contract){
-  const rpc="https://test.rpc.fastnear.com";
-  const q=async(m,a={})=>{const r=await fetch(rpc,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({jsonrpc:"2.0",id:1,method:"query",params:{request_type:"call_function",finality:"final",account_id:contract,method_name:m,args_base64:btoa(JSON.stringify(a))}})});const j=await r.json();if(j.error||j.result?.error)throw new Error(JSON.stringify(j.error||j.result.error));return JSON.parse(new TextDecoder().decode(new Uint8Array(j.result.result)))};
-  const N=y=>(Number(BigInt(y)/10n**21n)/1000).toString(),W=v=>v&&v.replace(/([a-z])([A-Z])/g,"$1_$2").toUpperCase();
-  const [es,ts,ds,js]=await Promise.all([q("list_enclaves",{from:0,limit:100}),q("list_treaties",{from:0,limit:200}),q("list_disputes",{from:0,limit:200}),q("list_judges")]);
-  const tl=[{type:"intro",judges:js.map((j,i)=>({...j,name:"Judge "+i})),text:`live: ${contract} (${js.length} judges)`}];
-  es.forEach(({enclave:e})=>tl.push({type:"enclave_registered",enclave:e.account,chain:e.payout.chain,collateral:N(e.free),text:`enclave ${e.account}`}));
-  ts.forEach(t=>tl.push({type:"treaty_ratified",treaty:{id:t.id,a:t.party_a,b:t.party_b,bond_a:N(t.bond_a),bond_b:N(t.bond_b)},text:`treaty #${t.id} ${short(t.party_a)} ↔ ${short(t.party_b)} [${t.status}]`}));
-  ds.forEach(d=>{tl.push({type:"dispute_filed",dispute:d,text:`dispute #${d.id}: ${d.allegation}`});if(d.verdict)tl.push({type:"ruling",dispute:d.id,final:W(d.verdict),raw:W(d.raw_verdict),judges:d.judges,text:`ruling #${d.id}: ${W(d.verdict)} (${d.metric_bps} bps)`})});
-  tl.push({type:"snapshot",snapshot:{enclaves:es.map(({enclave:e,score})=>({name:e.name,chain:e.payout.chain,free:N(e.free),locked:N(e.locked),frozen:e.frozen,score})),treaties:ts.map(t=>({id:t.id,a:t.party_a,b:t.party_b,status:t.status,bond_a:N(t.bond_a),bond_b:N(t.bond_b)})),disputes:ds.map(d=>({...d,verdict:W(d.verdict)}))},text:"live snapshot"});
-  return{timeline:tl};
-}
-(async()=>{
-  const c=new URLSearchParams(location.search).get("contract");
-  try{data=c?await live(c):await (await fetch("demo-data.json")).json();$("#mode").textContent=c?"live · "+c:"replay · "+(data.mode||"simulation");if(c)$("#mode").classList.add("live")}
-  catch(e){$("#log").textContent="Could not load data: "+e.message+". Run `npm run sim` in offchain/ and serve this folder.";return}
-  reset();$("#play").onclick=play;$("#step").onclick=step;$("#reset").onclick=reset;$("#end").onclick=()=>{stop();while(idx<data.timeline.length)step()};
-  $("#speed").oninput=()=>{if(timer){stop();play()}};
-  c?$("#end").click():play();
-})();
-</script>
+<div id="root" aria-live="polite"></div>
+<div class="scrim hidden" id="scrim"></div>
+<aside class="drawer" id="drawer" role="dialog" aria-modal="true" aria-labelledby="drawer-title" hidden>
+  <header><div><div class="label" id="drawer-kicker"></div><h3 id="drawer-title"></h3></div><button class="x" id="drawer-x" aria-label="Close panel">✕</button></header>
+  <div class="content" id="drawer-body"></div>
+</aside>
+<div class="tip hidden" id="tip" role="tooltip"></div>
+<script src="app.js?v=2.0.5"></script>
 </body>
 </html>

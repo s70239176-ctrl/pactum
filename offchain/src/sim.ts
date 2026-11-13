@@ -1,7 +1,7 @@
 // `npm run sim`: the whole Pactum lifecycle with zero chain and zero LLM calls (D-9).
 // Scripted agents, SimTee judges (same EIP-191 wire format as NEAR AI Cloud),
 // contract-mirror ledger, local evidence + telemetry hosts.
-// Outputs: frontend/demo-data.json (war room) and evidence/sim-evidence.json (npm run verify).
+// Outputs: frontend/data/demo-data.json (war room) and evidence/sim-evidence.json (npm run verify).
 import { createServer, type Server } from "node:http";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { negotiate, type Agent, type ScriptedDeal } from "./agents.ts";
@@ -158,10 +158,10 @@ async function main() {
 
   const root = new URL("../../", import.meta.url);
   mkdirSync(new URL("evidence/", root), { recursive: true });
-  writeFileSync(new URL("frontend/demo-data.json", root), JSON.stringify({ generated: new Date().toISOString(), mode: "simulation", contract: CONTRACT, timeline }, big, 2));
+  writeFileSync(new URL("frontend/data/demo-data.json", root), JSON.stringify({ generated: new Date().toISOString(), mode: "simulation", contract: CONTRACT, timeline }, big, 2));
   writeFileSync(new URL("evidence/sim-evidence.json", root), JSON.stringify({ contract: CONTRACT, judges: L.judges, items: evidence }, big, 2));
   const refused = evidence.filter((e) => e.refused).length, robs = evidence.filter((e) => "refused" in e).length;
-  console.log(`\nrob attempts refused: ${refused}/${robs}. wrote frontend/demo-data.json and evidence/sim-evidence.json`);
+  console.log(`\nrob attempts refused: ${refused}/${robs}. wrote frontend/data/demo-data.json and evidence/sim-evidence.json`);
   if (refused !== robs) process.exit(1);
 }
 

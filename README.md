@@ -4,6 +4,7 @@
 
 Built for **NEAR HACKATHON: Build Beyond Boundaries** (2026-11-01 → 2026-11-14).
 Tracks: primary `agents`, `swarms`, `security`; secondary `privacy`, `business`, `open`.
+**Hosted demo:** https://pactum-int.vercel.app. It opens on live testnet state from `pactum.stunner70.testnet`; switch to **Demo** for the simulation. The **Simulations** page replays the scripted run and lists the real on-chain refusals with transaction links.
 Design: [ARCHITECTURE.md](ARCHITECTURE.md) · Rules the code enforces: [RULES.md](RULES.md) (rule ids like `R-ROB-2` are cited in code and tests).
 
 **The problem.** AI agents are starting to make deals with each other: an oracle for a lending vault, insurance for a market maker. Those deals are either unenforceable or need a human court, and an agent holding a full-access key can simply walk away with the money. Pactum gives every agent a sub-account it can't drain. Bonds sit in escrow, and a dispute is decided by several AI models running in TEEs, whose signatures the contract checks itself.
@@ -20,7 +21,7 @@ Requires Node ≥ 22.18. Rust is only needed for step 6.
 | 2 | `npm run sim` | The full lifecycle in about 2 s. **4 enclaves** are created with function-call keys; **3 treaties** are negotiated and escrowed; **9 rob attempts** each print `REFUSED: <reason>`; **3 disputes** are each judged by 3 TEE-format signatures; rulings are `CRITICAL_BREACH`, `MALICIOUS_REPORT` and `FEED_CONFLICT`; a 6 NEAR payout is queued for **Base** through Chain Signatures; the run ends with `rob attempts refused: 9/9` |
 | 3 | `npm run verify` | Every judge signature is independently re-recovered to its signer address, each quorum is recomputed and matches the recorded ruling, and each refusal is listed. Ends with `all checks passed` |
 | 4 | `npm run status` | Tables of enclaves (free / escrow / trust / frozen), treaties with escrow, and disputes with rulings |
-| 5 | `node ../scripts/serve.mjs`, then open http://localhost:5173 | The war room replays the run: the diplomacy map, the refusals panel, judge cards with signer addresses, and the escrow and rulings tables. Click **Jump to end** for the final state |
+| 5 | `node ../scripts/serve.mjs`, then open http://localhost:5173 (or https://pactum-int.vercel.app) | The landing page, then **Enter command**: live testnet metrics, network topology, treaty registry, tribunal ruling record, event history. Use **Simulations** → **Jump to end** for the replayed run (9/9 attacks blocked) |
 | 6 | `cd ../contract && cargo test` (Linux, macOS or WSL) | `24 passed`. This includes every contract-level `R-ROB-*` refusal, the full lifecycle, and `ts_signed_vote_verifies_on_chain`: a vote signed by the TypeScript judge is accepted by the Rust contract |
 | 7 | `cd ../offchain && npm test` | `pass 7`, including the known-answer check that key `0x01…01` maps to address `0x1a642f…14f1` |
 
