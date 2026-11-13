@@ -11,6 +11,7 @@ import { sha256hex, type TeeVote } from "./tee.ts";
 import { SimTee } from "./tee.ts";
 import { Ledger, Refusal, Y, fmt, score, AGENT_METHODS } from "./ledger.ts";
 import { quoteBondFunding } from "./intents.ts";
+import { runMarkets } from "./markets.ts";
 
 const CONTRACT = process.env.PACTUM_CONTRACT ?? "pactum.sim.testnet";
 const big = (_k: string, v: unknown) => (typeof v === "bigint" ? fmt(v) : v);
@@ -163,6 +164,11 @@ async function main() {
   const refused = evidence.filter((e) => e.refused).length, robs = evidence.filter((e) => "refused" in e).length;
   console.log(`\nrob attempts refused: ${refused}/${robs}. wrote frontend/data/demo-data.json and evidence/sim-evidence.json`);
   if (refused !== robs) process.exit(1);
+
+  // Bonded Markets: competitive rounds on the same machinery (separate ledger, same judges)
+  console.log("");
+  await runMarkets(SEEDS);
+  console.log("wrote frontend/data/markets-data.json and evidence/markets-evidence.json");
 }
 
 main().catch((e) => { console.error(e); process.exit(1); });

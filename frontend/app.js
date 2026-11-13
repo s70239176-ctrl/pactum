@@ -426,7 +426,7 @@
         </div></section>
       <section class="sec"><span class="label">Protocol lifecycle</span><h2>Five stages. One record.</h2>
         <div class="lifecycle">${[["Agent identities", "register_enclave creates a sub-account with a scoped key and credits collateral.", "Sub-accounts · function-call keys"], ["Treaty formation", "Agents negotiate, propose and ratify the exact terms hash, gaslessly.", "Meta transactions (NEP-366)"], ["Bonded escrow", "Bonds move free → locked. Locked funds cannot be withdrawn by anyone.", "Escrow ledger · audit()"], ["Dispute adjudication", "Hash-bound evidence; three TEE judges; 2-of-3 signatures recovered on-chain.", "NEAR AI Cloud · ecrecover"], ["Enforcement", "Slash, release or forfeit; cross-chain payouts signed by the MPC network.", "Chain Signatures · NEAR Intents"]].map(([t, p, k], i) => `<div class="lc"><span class="n">0${i + 1}</span><div class="bar"></div><h4>${t}</h4><p>${p}</p><div class="kit">${k}</div></div>`).join("")}</div></section>
-      <section class="sec"><div class="split"><div><span class="label">The network</span><h2>A live map of sovereign relationships.</h2><p class="intro">Read straight from the Pactum contract on NEAR testnet: enclaves, treaties and their status. ${m && m.mode === "live" ? `Currently ${m.enclaves.length} enclaves and ${m.treaties.length} treaty on <span class="mono">${esc(m.contract)}</span>.` : ""}</p><a class="btn" href="#/diplomacy" style="margin-top:20px">Open the network →</a></div>
+      <section class="sec"><div class="split"><div><span class="label">The network</span><h2>A live map of sovereign relationships.</h2><p class="intro">Read straight from the Pactum contract on NEAR testnet: enclaves, treaties and their status. ${m && m.mode === "live" ? `Currently ${m.enclaves.length} enclaves and ${m.treaties.length} treaty on <span class="mono">${esc(m.contract)}</span>.` : ""}</p><div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:20px"><a class="btn" href="#/diplomacy">Open the network →</a><a class="btn ghost" href="#/markets">Bonded Markets →</a></div></div>
         <div class="preview-frame" id="land-topo">${m ? "" : `<div class="skeleton" style="height:260px"></div>`}</div></div></section>
       <section class="sec tribunal-sec"><div class="split"><div class="preview-frame" style="border-color:rgba(215,184,121,.25)">${m && m.disputes[0] ? rulingDoc(m.disputes[0], true) : `<div class="empty">${I.empty}No ruling recorded yet.</div>`}</div>
         <div><span class="label" style="color:var(--gold)">The tribunal</span><h2>Judgement you can <em>verify.</em></h2><p class="intro">Each judge signs the exact bytes it received and returned. Pactum binds every vote to the contract, the dispute and the evidence hash, so a relayer can neither forge nor replay a verdict.</p><a class="btn" href="#/tribunal" style="margin-top:20px">Enter the tribunal →</a></div></div></section>
@@ -436,7 +436,7 @@
   }
 
   // ---------------------------------------------------------------- app shell
-  const NAV = [["verify", "Verify", I.shield.replace('viewBox="0 0 32 32"', 'viewBox="0 0 32 32" width="17" height="17"')], ["command", "Command", I.command], ["diplomacy", "Diplomacy", I.diplomacy], ["enclaves", "Enclaves", I.enclave], ["treaties", "Treaties", I.treaty], ["tribunal", "Tribunal", I.tribunal], ["simulation", "Simulations", I.sim], ["events", "Events", I.events]];
+  const NAV = [["verify", "Verify", I.shield.replace('viewBox="0 0 32 32"', 'viewBox="0 0 32 32" width="17" height="17"')], ["command", "Command", I.command], ["diplomacy", "Diplomacy", I.diplomacy], ["enclaves", "Enclaves", I.enclave], ["treaties", "Treaties", I.treaty], ["tribunal", "Tribunal", I.tribunal], ["simulation", "Simulations", I.sim], ["markets", "Bonded Markets", I.lock.replace('viewBox="0 0 32 32"', 'viewBox="0 0 32 32" width="17" height="17"')], ["events", "Events", I.events]];
   function shell(route, inner) {
     return `<div class="app">
       <header class="topbar"><button class="menu-btn" id="smenu" aria-label="Open navigation" aria-expanded="false">${I.menu}</button><a class="brand" href="#/">${I.logo}<span class="hide-xs">PACTUM</span></a><span class="sep hide-sm"></span>
@@ -698,6 +698,7 @@
         <li><b>Click “Attempt all” below.</b> <span class="dim">See each recorded attack fetched live from NEAR testnet and refused: contract panics and runtime key refusals, each with its nearblocks link.</span></li>
         <li><b>Click “Check the ruling”.</b> <span class="dim">See the dispute decided by three NEAR AI Cloud TEE judges succeed on-chain (CRITICAL_BREACH).</span></li>
         <li><b>Open <a href="#/tribunal">Tribunal</a>.</b> <span class="dim">See the three real model votes, each judge's attested TEE signer, and every stage linked to its transaction.</span></li>
+        <li><b>Open <a href="#/markets">Bonded Markets</a> (optional).</b> <span class="dim">See the same machinery run competitive markets: three scored rounds and a P&amp;L leaderboard (simulation, with a real testnet counterpart).</span></li>
         <li><b>Run the CLI below (optional, ~1 minute).</b> <span class="dim">See the full simulation re-run, every signature re-verified, and live contract state.</span></li>
       </ol></div></section>
       <section class="panel" style="margin-bottom:var(--gap)"><header><h2>Try to rob the treaty</h2><div class="filters"><span class="mono" id="vtally" style="color:var(--ok)"></span><button class="btn primary" id="vall">Attempt all</button></div></header>
@@ -739,8 +740,48 @@
     tally();
   }
 
+  // ---------------------------------------------------------------- bonded markets (simulation + real counterpart)
+  const MK = { data: null, real: null };
+  const pnlChip = (p) => { const n = Number(p); return `<span class="pnl ${n > 0 ? "up" : n < 0 ? "down" : ""}">${n > 0 ? "+" : ""}${esc(p)} NEAR</span>`; };
+  function vMarkets() {
+    const d = MK.data;
+    if (!d) return loadingView();
+    const loop = ["Bid collateral", "Win the contract", "Deliver or defect", "Challenge", "TEE verdict", "Slash / payout / forfeit", "Reputation shift"];
+    const real = MK.real;
+    return pageHead("Competitive layer", "BONDED MARKETS", "The same diplomatic layer runs competitive markets: agents win work by posting collateral and lose it when they fail to deliver.").replace(modeBadge(), `<span class="mode-badge demo">SIMULATION · SAME CONTRACT RULES</span>`) + `
+      <section class="panel" style="margin-bottom:var(--gap)"><header><h2>The loop · read this in 60 seconds</h2></header><div class="body">
+        <div class="loop">${loop.map((s, i) => `<div><span class="mono">0${i + 1}</span>${esc(s)}</div>`).join("")}</div>
+        <p class="dim" style="margin:14px 0 0">Nothing here is new protocol. A bid is <span class="mono">propose_treaty</span> with a bond, winning is <span class="mono">ratify</span>, a losing bid is <span class="mono">cancel_proposal</span>, a challenge is <span class="mono">file_dispute</span>, and the outcome is the tribunal's settlement rule. ${d.startCollateral} NEAR starting collateral per agent; rounds are scored by what the contract settles.</p></div></section>
+      <div class="grid g-3 rounds">${d.rounds.map((r, i) => `<article class="panel round"><header><h2>Round ${i + 1}</h2>${verdictChip(r.outcome.verdict)}</header><div class="body">
+        <h3>${esc(r.name)}</h3><p class="dim" style="margin:4px 0 12px">${esc(r.tagline)}</p>
+        <ol class="rsteps">${r.events.map((e) => `<li>${esc(e)}</li>`).join("")}</ol>
+        <div class="label" style="margin-top:12px">Economic outcome</div>
+        <div class="moves">${r.moves.map((m) => `<div><b>${esc(m.agent)}</b>${pnlChip(m.delta)}${m.trust ? `<span class="mono ${m.trust > 0 ? "" : "neg"}">trust ${m.trust > 0 ? "+" : ""}${m.trust}</span>` : ""}</div>`).join("")}</div>
+        <div class="mono mute" style="margin-top:10px">${esc(r.rule)}</div>
+        ${r.id === "tender" && real ? `<div class="realtx"><span class="mode-badge live">REAL ON TESTNET</span><div style="margin-top:6px">The same outcome happened for real: meridian (an oracle) was slashed for stale feeds in two disputes on <span class="mono">${esc(real.contract)}</span>.</div><div style="margin-top:6px">${real.rulings.map((x) => `Dispute #${x.id} ${x.judges}: ${txLink(x.hash)}`).join("<br>")}</div></div>` : ""}
+      </div></article>`).join("")}</div>
+      <div class="grid g-main" style="margin-top:var(--gap)">
+        <section class="panel"><header><h2>Leaderboard · after 3 rounds</h2><span class="mono mute">simulation</span></header><div class="table-wrap"><table class="dt cards"><thead><tr><th>#</th><th>Agent</th><th>Role</th><th>Net P&amp;L</th><th>Payouts won</th><th>Trust</th></tr></thead><tbody>
+          ${d.leaderboard.map((l, i) => `<tr style="cursor:default"><td class="mono">${i + 1}</td><td><b>${esc(l.agent)}</b></td><td data-l="role" class="dim">${esc(l.role)}</td><td data-l="P&L">${pnlChip(l.pnl)}</td><td data-l="payouts">${esc(l.payouts)} NEAR</td><td data-l="trust">${l.trust}</td></tr>`).join("")}</tbody></table></div></section>
+        <section class="panel"><header><h2>How it's scored</h2></header><div class="body">
+          <p style="margin-top:0">Net P&amp;L = change in an agent's collateral (free + escrowed) + payouts it received, exactly as the contract settles them. Trust is the on-chain reputation formula (RULES S-7).</p>
+          <p class="dim"><b>Honest limit:</b> the contract settles bonds, slashes, payouts and dispute bonds. Service fees written in treaty text (“pays X per epoch”) are <b>not</b> transferred by the contract, so they are not counted here.</p>
+          <p class="dim">Every verdict above is signed in the same TEE wire format as the real judges and re-checked by <span class="mono">npm run verify</span> (evidence/markets-evidence.json).</p>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px"><a class="btn" href="#/verify">See real attacks refused on-chain →</a><a class="btn ghost" href="${REPO}/blob/main/offchain/src/markets.ts" target="_blank" rel="noopener">Scenario source</a></div></div></section></div>`;
+  }
+  async function marketsMount() {
+    try {
+      MK.data ||= await (await fetch("data/markets-data.json")).json();
+      if (!MK.real) {
+        const [a, b] = await Promise.all([fetch("data/testnet-evidence.json").then((r) => r.json()), fetch("data/testnet-real-judges.json").then((r) => r.json()).catch(() => null)]);
+        MK.real = { contract: a.contract, rulings: [{ id: 0, judges: "(simulated TEE keys)", hash: a.items.find((i) => i.step === "submit_verdicts")?.hash }, ...(b ? [{ id: 1, judges: "(3 NEAR AI Cloud TEE judges)", hash: b.items.find((i) => i.step === "submit_verdicts")?.hash }] : [])].filter((x) => x.hash) };
+      }
+    } catch (e) { $("#main").innerHTML = `<div class="notice err">Could not load market data: ${esc(e.message)}</div>`; return; }
+    $("#main").innerHTML = vMarkets();
+  }
+
   // ---------------------------------------------------------------- router
-  const VIEWS = { verify: vVerify, command: vCommand, diplomacy: vDiplomacy, enclaves: vEnclaves, treaties: vTreaties, tribunal: vTribunal, simulation: vSimulation, events: vEvents };
+  const VIEWS = { verify: vVerify, markets: vMarkets, command: vCommand, diplomacy: vDiplomacy, enclaves: vEnclaves, treaties: vTreaties, tribunal: vTribunal, simulation: vSimulation, events: vEvents };
   function route() { const h = location.hash.replace(/^#\/?/, ""); return h.split(/[?#]/)[0]; }
   function render() {
     const r = route();
@@ -756,7 +797,7 @@
       return;
     }
     if (r !== "simulation" && sim.timer) simPause();
-    const inner = r === "verify" ? loadingView() : r === "simulation" ? vSimulation() : S.loading ? loadingView() : S.error ? errorView() : VIEWS[r]();
+    const inner = r === "verify" || r === "markets" ? loadingView() : r === "simulation" ? vSimulation() : S.loading ? loadingView() : S.error ? errorView() : VIEWS[r]();
     root.innerHTML = shell(r, inner);
     document.title = `Pactum · ${NAV.find((n) => n[0] === r)[1]}`;
     $$("[data-mode]").forEach((b) => (b.onclick = () => b.dataset.mode !== S.mode && setMode(b.dataset.mode)));
@@ -765,6 +806,7 @@
     $("#retry")?.addEventListener("click", load);
     if (r === "simulation") return simMount();
     if (r === "verify") return verifyMount();
+    if (r === "markets") return marketsMount();
     if (S.loading || S.error) return;
     bindRefs($("#main"));
     if ($("#topo")) topology($("#topo"));

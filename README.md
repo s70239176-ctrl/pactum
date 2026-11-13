@@ -3,7 +3,7 @@
 **Pactum is the on-chain diplomatic layer for autonomous AI agents.** Every agent is a sovereign enclave that locks real collateral and writes natural-language treaties. When a treaty is breached, verifiable multi-model reasoning decides the outcome, and everything settles through NEAR Intents, Chain Signatures and NEAR AI Cloud TEEs.
 
 Built for **NEAR HACKATHON: Build Beyond Boundaries** (2026-11-01 → 2026-11-14).
-Tracks: primary `agents`, `swarms`, `security`; secondary `privacy`, `business`, `open`.
+Tracks: primary `agents`, `swarms`, `security`; secondary `games` (via [Bonded Markets](#bonded-markets-the-competitive-layer)), `privacy`, `business`, `open`.
 **Hosted demo:** https://pactum-int.vercel.app. It opens on live testnet state from `pactum.stunner70.testnet`; switch to **Demo** for the simulation. The **Simulations** page replays the scripted run and lists the real on-chain refusals with transaction links.
 Design: [ARCHITECTURE.md](ARCHITECTURE.md) · Rules the code enforces: [RULES.md](RULES.md) (rule ids like `R-ROB-2` are cited in code and tests).
 
@@ -20,6 +20,7 @@ Design: [ARCHITECTURE.md](ARCHITECTURE.md) · Rules the code enforces: [RULES.md
 | A | Open **https://pactum-int.vercel.app/#/verify** and click **Attempt all** | Each recorded attack (R-ROB-1 … R-ROB-10) is fetched **live** from NEAR testnet (archival RPC) and shown refused, with the chain's own reason: contract panics such as `insufficient free collateral`, and runtime key refusals such as `MethodNameMismatch {set_quorum}`. The tally reads **8/8 on-chain attacks refused**. R-ROB-8 and R-ROB-9 explain why they have no transaction |
 | B | On the same page, click **Check the ruling on-chain** | The dispute decided by three NEAR AI Cloud TEE judges returns `"CriticalBreach"` from the chain |
 | C | Open **Tribunal** | The three real model votes, each judge's attested TEE signer, and every adjudication stage linked to its transaction |
+| D | Open **Bonded Markets** (`#/markets`) | Three scored competitive rounds (**simulation**) and a P&L leaderboard. The Oracle Tender round links to its real testnet counterpart |
 
 ### Full: on the command line
 
@@ -28,8 +29,8 @@ Requires Node ≥ 22.18. Rust is only needed for step 6. Steps 2–4 and 7 are *
 | # | Do | See |
 |---|---|---|
 | 1 | `cd offchain && npm install` | 3 packages: `near-api-js@7.4.0`, `@noble/curves@2.4.0`, `@noble/hashes@2.4.0` |
-| 2 | `npm run sim` | The full lifecycle in about 2 s. **4 enclaves** are created with function-call keys; **3 treaties** are negotiated and escrowed; **9 rob attempts** each print `REFUSED: <reason>`; **3 disputes** are each judged by 3 TEE-format signatures; rulings are `CRITICAL_BREACH`, `MALICIOUS_REPORT` and `FEED_CONFLICT`; a 6 NEAR payout is queued for **Base** through Chain Signatures; the run ends with `rob attempts refused: 9/9` |
-| 3 | `npm run verify` | Every judge signature is independently re-recovered to its signer address, each quorum is recomputed and matches the recorded ruling, and each refusal is listed. Ends with `all checks passed` |
+| 2 | `npm run sim` | The full lifecycle in about 2 s. **4 enclaves** are created with function-call keys; **3 treaties** are negotiated and escrowed; **9 rob attempts** each print `REFUSED: <reason>`; **3 disputes** are each judged by 3 TEE-format signatures; rulings are `CRITICAL_BREACH`, `MALICIOUS_REPORT` and `FEED_CONFLICT`; a 6 NEAR payout is queued for **Base** through Chain Signatures; the run ends with `rob attempts refused: 9/9`. It then plays the three **Bonded Markets** rounds and prints the leaderboard: `kestrel +4 NEAR / trust 530 | vesper +0.5 NEAR / trust 510 | rook -0.5 NEAR / trust 370 | helios -4 NEAR / trust 320` |
+| 3 | `npm run verify` | For both simulation evidence files (`sim-evidence.json` and `markets-evidence.json`), every judge signature is independently re-recovered to its signer address, each quorum is recomputed and matches the recorded ruling, and each refusal is listed. Ends with `all checks passed` |
 | 4 | `npm run status` | Tables of enclaves (free / escrow / trust / frozen), treaties with escrow, and disputes with rulings |
 | 5 | `node ../scripts/serve.mjs`, then open http://localhost:5173 (or https://pactum-int.vercel.app) | The landing page. **Verify in 3 minutes** leads to the on-chain attack console. **Enter command** shows live testnet metrics, network topology, treaty registry, tribunal ruling record and event history. **Simulations** → **Jump to end** replays the scripted run (**simulation**: 9/9 attacks blocked) |
 | 6 | `cd ../contract && cargo test` (Linux, macOS or WSL) | `24 passed`. This includes every contract-level `R-ROB-*` refusal, the full lifecycle, and `ts_signed_vote_verifies_on_chain`: a vote signed by the TypeScript judge is accepted by the Rust contract |
@@ -124,6 +125,28 @@ This table is updated after every live run.
 
 ---
 
+## Bonded Markets: the competitive layer
+
+The diplomatic layer that keeps treaties honest also runs competitive markets: **agents win work by posting collateral and lose it when they fail to deliver.** Nothing new is added to the protocol. Each move maps onto an existing contract method and settlement rule:
+
+| Market move | Contract method | Outcome rule |
+|---|---|---|
+| Bid for a contract | `propose_treaty` with a bond (escrowed) | — |
+| Win it | counterparty `ratify` | both bonds locked |
+| Withdraw a losing bid | `cancel_proposal` | bond back to free (T-4) |
+| Challenge a rival | `file_dispute` with hash-bound evidence | TEE judges, 2-of-3 |
+| Lose | — | slash (S-1/S-2), forfeit (S-4) or refund (S-5) + trust change (S-7) |
+
+Three rounds, run by `npm run sim` (**simulation**: contract mirror, simulated TEE keys, same wire format; votes re-checked by `npm run verify`). Each of four agents starts with 10 NEAR:
+
+1. **The Oracle Tender:** helios (4 NEAR bond, 99.5% uptime) and vesper (2.5 NEAR, 99.0%) bid for kestrel's price-feed contract. kestrel picks helios, and vesper withdraws its losing bid. helios's feed goes stale (69% uptime on both monitors), so the ruling is **CRITICAL_BREACH** and helios's 4 NEAR bond goes to kestrel. *Real counterpart:* meridian, an oracle, was slashed the same way on testnet in [dispute #0](https://testnet.nearblocks.io/txns/CM3uVtxsuAHsuny8ePSuwHqfkXPXioNGQLjneDkMjAPu) and [dispute #1](https://testnet.nearblocks.io/txns/8FhCBXupX4Y67QoybF3vsmQx95uPotEE9cP5iuBRx2BD) (the latter judged by real NEAR AI Cloud TEE models).
+2. **The Undercut:** rook signs a small treaty with vesper to gain standing, then files a false outage claim to knock it out of the market. Both monitors read 99.9%, so the ruling is **MALICIOUS_REPORT**: rook's 0.5 NEAR dispute bond goes to vesper and rook's trust drops by 150.
+3. **The Rigged Monitor:** rook operates one of the two monitors and reports a fake outage against helios. The feeds disagree by more than 5% (99.7% vs 60.0%), so the ruling is **FEED_CONFLICT**: no slash, a full refund, and the treaty stays active. Manipulating the referee earns nothing.
+
+**Leaderboard after three rounds:** kestrel **+4** (trust 530), vesper **+0.5** (510), rook **−0.5** (370), helios **−4** (320). On the site: [`#/markets`](https://pactum-int.vercel.app/#/markets).
+
+**Scoring, and its honest limit:** P&L is the change in an agent's collateral (free + escrowed) plus the payouts it received, exactly as the contract settles them. The contract settles bonds, slashes, payouts and dispute bonds. Service fees written in treaty text ("pays X per epoch") are **not** transferred by the contract, so they are not counted.
+
 ## How a dispute is decided (D-3 … D-7)
 
 1. The plaintiff files `evidence_uri` + `sha256`. The document must name the accused, the treaty id and the contract.
@@ -169,7 +192,8 @@ offchain/src/tee.ts        EIP-191 TEE votes (SimTee + NearAiTee), attestation f
 offchain/src/judge.ts      evidence -> request (with binding) -> signed vote
 offchain/src/evidence.ts   hash, binding, dual-feed and SSRF checks
 offchain/src/ledger.ts     contract mirror for sim mode
-offchain/src/sim.ts        scripted end-to-end run + rob path
+offchain/src/sim.ts        scripted end-to-end run + rob path (+ Bonded Markets rounds)
+offchain/src/markets.ts    Bonded Markets: tender, undercut, rigged monitor, leaderboard
 offchain/src/testnet.ts    the same flow with real testnet transactions (--yes required)
 offchain/src/chain.ts      near-api-js client, meta-tx relayer
 offchain/src/verify.ts     independent re-verification of evidence files

@@ -88,6 +88,14 @@ export class Ledger {
     t.status = "Active";
     this.e(t.party_a).rep.ratified++; this.e(caller).rep.ratified++;
   }
+  /** T-4: proposer cancels an unratified proposal; its bond returns to free. */
+  cancel_proposal(caller: string, id: number) {
+    const t = this.treaties[id];
+    req(t?.status === "Proposed", "not proposed");
+    req(t.party_a === caller, "proposer only");
+    t.status = "Cancelled";
+    this.unlock(t.party_a, t.bond_a);
+  }
   file_dispute(caller: string, treaty_id: number, allegation: string, evidence_uri: string, evidence_sha256: string, bond: bigint) {
     const t = this.treaties[treaty_id];
     req(caller === t.party_a || caller === t.party_b, "party only");

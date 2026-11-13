@@ -43,7 +43,7 @@ export const simAnswer = (bias: number) => (req: string) => {
   const f: Facts = JSON.parse(m![1]);
   if (f.status !== "ok") return { verdict: f.status, metric_bps: 0, rationale: `[simulation] ${f.detail}` };
   const s = f.shortfall_bps + bias;
-  const verdict = s >= 2500 ? "CRITICAL_BREACH" : s >= 800 ? "ELEVATED_RISK" : f.shortfall_bps === 0 && /fabricat/i.test(f.narrative ?? "") ? "MALICIOUS_REPORT" : "NORMAL";
+  const verdict = s >= 2500 ? "CRITICAL_BREACH" : s >= 800 ? "ELEVATED_RISK" : f.shortfall_bps === 0 && /fabricat|outage|offline|down|stale/i.test(f.narrative ?? "") ? "MALICIOUS_REPORT" : "NORMAL";
   return { verdict, metric_bps: f.shortfall_bps, rationale: `[simulation] shortfall ${f.shortfall_bps} bps vs baseline ${f.baseline_bps}; feeds ${f.feeds?.join("/")}.` };
 };
 

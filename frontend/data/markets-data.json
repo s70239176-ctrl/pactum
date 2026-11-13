@@ -1,0 +1,167 @@
+{
+  "generated": "2026-11-13T02:17:54.503Z",
+  "mode": "simulation",
+  "contract": "pactum.markets.sim",
+  "startCollateral": 10,
+  "rounds": [
+    {
+      "id": "tender",
+      "name": "The Oracle Tender",
+      "rule": "S-1 CRITICAL_BREACH: 100% of the defendant's bond goes to the plaintiff",
+      "tagline": "Two oracles bid collateral for one vault's price-feed contract. The winner fails to deliver and its bond is slashed.",
+      "events": [
+        "helios bids: 99.50% uptime, backed by a 4 NEAR bond (escrowed)",
+        "vesper bids: 99.00% uptime, backed by a 2.5 NEAR bond (escrowed)",
+        "kestrel awards the contract to helios (larger bond, stricter guarantee) and posts its own 1 NEAR bond",
+        "vesper withdraws its losing bid; its 2.5 NEAR bond returns to free collateral",
+        "two independent monitors read 69.0% / 69.8% uptime; 3 judges rule CRITICAL_BREACH (3025 bps shortfall)",
+        "helios's 4 NEAR bond is slashed to kestrel; kestrel's dispute bond is refunded; treaty closed"
+      ],
+      "outcome": {
+        "verdict": "CRITICAL_BREACH",
+        "metric": 3025
+      },
+      "moves": [
+        {
+          "agent": "kestrel",
+          "delta": "4",
+          "trust": 30
+        },
+        {
+          "agent": "helios",
+          "delta": "-4",
+          "trust": -190
+        }
+      ]
+    },
+    {
+      "id": "undercut",
+      "name": "The Undercut",
+      "rule": "S-4 MALICIOUS_REPORT: the plaintiff's dispute bond goes to the defendant",
+      "tagline": "A challenger buys standing with an incumbent, then files a false breach claim to knock it out. The court makes it pay.",
+      "events": [
+        "rook signs a small treaty with vesper (bonds 1 + 2 NEAR) to gain standing to sue",
+        "both monitors read 99.9% uptime, contradicting the claim; 3 judges rule MALICIOUS_REPORT",
+        "rook's 0.5 NEAR dispute bond goes to vesper; rook's trust score drops by 150"
+      ],
+      "outcome": {
+        "verdict": "MALICIOUS_REPORT",
+        "metric": 0
+      },
+      "moves": [
+        {
+          "agent": "vesper",
+          "delta": "0.5",
+          "trust": 10
+        },
+        {
+          "agent": "rook",
+          "delta": "-0.5",
+          "trust": -140
+        }
+      ]
+    },
+    {
+      "id": "rigged",
+      "name": "The Rigged Monitor",
+      "rule": "S-5 FEED_CONFLICT: full refund, no slash, treaty stays active",
+      "tagline": "A rival controls one of the two monitors and reports a fake outage. The feeds disagree, so nobody is slashed.",
+      "events": [
+        "rook contracts helios for a BTC/USD feed (bonds 1 + 2 NEAR)",
+        "monitor A reads 99.7%, rook's monitor B reads 60.0% (>5% apart); 3 judges rule FEED_CONFLICT",
+        "no slash: rook's dispute bond is refunded and the treaty stays active"
+      ],
+      "outcome": {
+        "verdict": "FEED_CONFLICT",
+        "metric": 0
+      },
+      "moves": [
+        {
+          "agent": "helios",
+          "delta": "0",
+          "trust": 10
+        },
+        {
+          "agent": "rook",
+          "delta": "0",
+          "trust": 10
+        }
+      ]
+    }
+  ],
+  "leaderboard": [
+    {
+      "agent": "kestrel",
+      "role": "Lending vault (buyer of price data)",
+      "start": "10",
+      "free": "10",
+      "escrow": "0",
+      "payouts": "4",
+      "pnl": "4",
+      "trust": 530,
+      "rep": {
+        "ratified": 1,
+        "honored": 0,
+        "breaches": 0,
+        "elevated": 0,
+        "malicious": 0,
+        "disputes_won": 1
+      }
+    },
+    {
+      "agent": "vesper",
+      "role": "Oracle provider",
+      "start": "10",
+      "free": "8.5",
+      "escrow": "2",
+      "payouts": "0",
+      "pnl": "0.5",
+      "trust": 510,
+      "rep": {
+        "ratified": 1,
+        "honored": 0,
+        "breaches": 0,
+        "elevated": 0,
+        "malicious": 0,
+        "disputes_won": 0
+      }
+    },
+    {
+      "agent": "rook",
+      "role": "Challenger",
+      "start": "10",
+      "free": "7.5",
+      "escrow": "2",
+      "payouts": "0",
+      "pnl": "-0.5",
+      "trust": 370,
+      "rep": {
+        "ratified": 2,
+        "honored": 0,
+        "breaches": 0,
+        "elevated": 0,
+        "malicious": 1,
+        "disputes_won": 0
+      }
+    },
+    {
+      "agent": "helios",
+      "role": "Oracle provider",
+      "start": "10",
+      "free": "4",
+      "escrow": "2",
+      "payouts": "0",
+      "pnl": "-4",
+      "trust": 320,
+      "rep": {
+        "ratified": 2,
+        "honored": 0,
+        "breaches": 1,
+        "elevated": 0,
+        "malicious": 0,
+        "disputes_won": 0
+      }
+    }
+  ],
+  "scoring": "Net change in collateral + payouts received, as settled by the contract mirror. Service fees in treaty text are not transferred by the contract and are not counted."
+}
