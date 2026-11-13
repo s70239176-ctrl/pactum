@@ -101,7 +101,7 @@ export async function houseDisputesLastDay() {
 
 const sleep = (ms) => new Promise((ok) => setTimeout(ok, ms));
 /** fetch with retries on network errors and 5xx (NEAR AI Cloud and self-fetches can blip). */
-async function fetchRetry(url, init = {}, tries = 3) {
+async function fetchRetry(url, init = {}, tries = 4) {
   for (let i = 0; ; i++) {
     try { const r = await fetch(url, init); if (r.status < 500 || i >= tries - 1) return r; } catch (e) { if (i >= tries - 1) throw e; }
     await sleep(700 * (i + 1));

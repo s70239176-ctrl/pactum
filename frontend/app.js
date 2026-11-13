@@ -913,7 +913,7 @@
   async function hJudge() {
     H.votes = H.offer.judges.map((j) => ({ ...j, state: "judging" })); hPaint();
     await Promise.all(H.offer.judges.map(async (_, k) => {
-      try { const v = await api("vote", { dispute_id: H.did, judge: k }); H.votes[k] = { ...H.votes[k], ...v, state: "signed" }; }
+      try { let v; for (let i = 0; ; i++) { try { v = await api("vote", { dispute_id: H.did, judge: k }); break; } catch (e) { if (i >= 2) throw e; await new Promise((ok) => setTimeout(ok, 1500)); } } H.votes[k] = { ...H.votes[k], ...v, state: "signed" }; }
       catch (e) { H.votes[k] = { ...H.votes[k], state: "failed", error: String(e.message || e) }; }
       hPaint();
     }));

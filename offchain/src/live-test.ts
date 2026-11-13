@@ -67,7 +67,8 @@ async function main() {
     const did = d.value as number;
     console.log(`  dispute #${did} ${EXPLORER}${d.hash}`);
     const t0 = Date.now();
-    const votes = await Promise.all([0, 1, 2].map((j) => api("vote", { dispute_id: did, judge: j }).catch((e) => ({ error: String(e.message) }))));
+    const vote = async (j: number) => { for (let i = 0; ; i++) { try { return await api("vote", { dispute_id: did, judge: j }); } catch (e) { if (i >= 2) return { error: String((e as Error).message) }; await new Promise((ok) => setTimeout(ok, 1500)); } } };
+    const votes = await Promise.all([0, 1, 2].map(vote));
     votes.forEach((v: any, j) => console.log(`  judge ${j}: ${v.error ?? `${v.parsed?.verdict} ${v.parsed?.metric_bps} (on-chain #${v.judge_id})`}`));
     console.log(`  judging took ${Math.round((Date.now() - t0) / 1000)} s`);
     const good = votes.filter((v: any) => !v.error);

@@ -95,7 +95,7 @@ export default async function handler(req, res) {
           // A model may be served by several TEE nodes; only nodes registered on-chain (each with its own
           // attestation report) can count, so retry until a registered node signs or time runs out.
           for (let i = 0; i < 3 && Date.now() < deadline - 8000; i++) {
-            last = await M.teeComplete(p.model, request_body, deadline);
+            try { last = await M.teeComplete(p.model, request_body, deadline); } catch (e) { if (Date.now() > deadline - 12000) throw e; await new Promise((ok) => setTimeout(ok, 1500)); continue; }
             const j = judges.find((x) => x.active && x.model === p.model && x.signing_address === last.signer);
             if (j) return { judge_id: j.id, request_body, response_body: last.response_body, signature: last.signature, signer: last.signer, model: p.model, name: p.name, parsed: M.parseContent(last.response_body), facts: f };
           }
